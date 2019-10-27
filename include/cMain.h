@@ -1,6 +1,10 @@
 #if !defined CMAIN_H
 #define CMAIN_H
 
+#include <wx/wx.h>
+class Game;
+#include "Game.h"
+class BoardTile;
 #include "BoardTile.h"
 
 class cMain: public wxFrame
@@ -10,7 +14,6 @@ public:
     ~cMain();
 
 private:
-    //wxDECLARE_EVENT_TABLE();
     BoardTile** board;
     Game* game;
 };

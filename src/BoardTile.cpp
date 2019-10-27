@@ -1,14 +1,12 @@
-#include <wx/wx.h>
-//#include "Game.h"
 #include "BoardTile.h"
 
-BoardTile::BoardTile(BoardTile** board, Game* game, bool player1_present, bool player2_present, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
+BoardTile::BoardTile(BoardTile** board, Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
 {
-    this->player1_present = player1_present;
-    this->player2_present = player2_present;
     this->board = board;
     this->game = game;
     this->selected = false;
+    this->token_present = false;
+    token = nullptr;
 }
 
  BoardTile::~BoardTile()
@@ -50,28 +48,83 @@ void BoardTile::render(wxDC&  dc)
     
 
 
-    if (player1_present)
+    if (token_present)
     {
-        dc.DrawIcon(wxIcon("./img/game_piece.png", wxBITMAP_TYPE_PNG, 130, 130), wxPoint(25, 25));
-    }
+        if (token->getPlayer() == PLAYER)
+        {
+            dc.DrawIcon(wxIcon("./img/token_white.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+        }
 
-    else if (player2_present)
-    {
-        dc.DrawIcon(wxIcon("./img/game_piece3.png", wxBITMAP_TYPE_PNG, 130, 130), wxPoint(25, 25));
+        else if (token->getPlayer() == AI)
+        {
+            dc.DrawIcon(wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+        }
     }
 }
 
 void BoardTile::onClick(wxMouseEvent& event)
-{
-    if ((player1_present || player2_present) && this->selected)
-    {
-        this->selected = !this->selected;
-    }
-
-    else if ((player1_present || player2_present) && !this->selected)
-    {
-        this->selected = !this->selected;
-    }
-        
+{    
+    game->reportClick(this);
     this->paintNow();
+    event.Skip();
+}
+
+void BoardTile::setSelected()
+{
+    this->selected = true;
+}
+
+void BoardTile::setUnselected()
+{
+    this->selected = false;
+}
+
+bool BoardTile::isSelected()
+{
+    return  selected;
+}
+
+void BoardTile::setRow(int row)
+{
+    this->row = row;
+}
+
+void BoardTile::setCol(int col)
+{
+    this->col = col;
+}
+
+int BoardTile::getRow()
+{
+    return this->row;
+}
+
+int BoardTile::getCol()
+{
+    return this->col;
+}
+
+
+void BoardTile::setToken(Token* token)
+{
+    this->token = token;
+    token_present = true;
+}
+
+bool BoardTile::isTokenPresent()
+{
+    return token_present;
+}
+
+Token* BoardTile::getToken()
+{
+    return token;
+}
+
+void BoardTile::removeToken()
+{
+    token = nullptr;
+    token_present = false;
+    selected = false;
+    paintNow();
 }
