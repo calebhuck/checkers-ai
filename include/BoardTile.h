@@ -10,7 +10,8 @@ class Game;
 class BoardTile: public wxPanel
 {
     public:
-        BoardTile(BoardTile** board, Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size);
+        BoardTile(Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size);
+        BoardTile(BoardTile* old_tile);
         ~BoardTile();
 
         void paintEvent(wxPaintEvent & evt);
@@ -35,8 +36,6 @@ class BoardTile: public wxPanel
         bool selected;
         bool token_present;
         Token* token;
-        //change to Board* ??? maybe not
-        BoardTile** board;
         Game* game;
         int row;
         int col;

@@ -10,11 +10,18 @@ enum PlayerType
 class Token
 {
     public:
-        Token(int id, PlayerType player, int row, int col);
+        Token(PlayerType player, int row, int col);
+        Token(Token* old_token);
         ~Token();
         void setKing();
         bool isKing();
         PlayerType getPlayer();
+        int getID();
+        void setID(int id);
+        void setRow(int row);
+        void setCol(int col);
+        int getRow();
+        int getCol();
 
     private:
         int row;

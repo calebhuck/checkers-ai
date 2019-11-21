@@ -1,12 +1,30 @@
 #include "BoardTile.h"
 
-BoardTile::BoardTile(BoardTile** board, Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
+BoardTile::BoardTile(Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
 {
-    this->board = board;
     this->game = game;
     this->selected = false;
     this->token_present = false;
     token = nullptr;
+}
+
+BoardTile::BoardTile(BoardTile* old_tile)
+{
+    std::cout << "BOARDTILE CONSTRUCTOR\n";
+    this->game = nullptr;
+    this->token_present = old_tile->isTokenPresent();
+    std::cout << "made it here.........\n";
+    if (token_present)
+    {
+        //std::cout << "creating copy token\n";
+        //this->token = new Token(old_tile->getToken());
+    }
+    else
+    {
+        //std::cout << "token is not present, set nullptr\n";
+        this->token = nullptr;
+    } 
+    std::cout << "exiting boardTIle constructor\n";
 }
 
  BoardTile::~BoardTile()
@@ -52,12 +70,18 @@ void BoardTile::render(wxDC&  dc)
     {
         if (token->getPlayer() == PLAYER)
         {
-            dc.DrawIcon(wxIcon("./img/token_white.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            if (!token->isKing())
+                dc.DrawIcon(wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            else                
+                dc.DrawIcon(wxIcon("./img/token_red_king.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
         }
 
         else if (token->getPlayer() == AI)
-        {
-            dc.DrawIcon(wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+        { 
+            if (!token->isKing())
+                dc.DrawIcon(wxIcon("./img/token_white.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            else                
+                dc.DrawIcon(wxIcon("./img/token_white_king.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
         }
     }
 }
@@ -118,7 +142,10 @@ bool BoardTile::isTokenPresent()
 
 Token* BoardTile::getToken()
 {
-    return token;
+    if (token_present)
+        return token;
+    else 
+        return nullptr;
 }
 
 void BoardTile::removeToken()
