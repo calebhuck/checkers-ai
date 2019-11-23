@@ -4,7 +4,8 @@
 enum PlayerType
 {
     PLAYER = 0,
-    AI = 1
+    AI = 1,
+    NONE = -1
 };
 
 class Token

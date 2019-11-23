@@ -9,7 +9,7 @@ cMain::cMain() : wxFrame(nullptr, wxID_ANY, "Checkers App", wxPoint(0, 19), wxSi
 
     board = new Board(8, 8);
     
-    this->game = new Game(board);
+    this->game = new Game(board, this);
     Token* token;
     BoardTile* tile;
     for (int col = 0; col < 8; col++)

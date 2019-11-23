@@ -7,7 +7,6 @@ class Board
 {
     public:
         Board(int rows, int cols);
-        Board(Board* board);
         ~Board();
         void addTile(BoardTile* tile);
         BoardTile* getTile(int row, int col);

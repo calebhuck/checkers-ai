@@ -5,8 +5,9 @@
 #define SWITCH_TURN(current) current_player = current_player ? PLAYER : AI;
 #define LOG(x) std::cout << x << std::endl;
 
-Game::Game(Board* board)
+Game::Game(Board* board, wxFrame* window)
 {
+    this->window = window;
     player_tokens = new Tokens(12, PLAYER);  
     ai_tokens = new Tokens(12, AI);  
     current_player = PLAYER;
@@ -15,15 +16,6 @@ Game::Game(Board* board)
     this->is_a_tile_selected = false;
     this->ai = new MiniMaxAI(this);
 }
-
-/*Game::Game(Game* game)
-{
-    this->current_player = game->getCurrentPlayer();
-    this->board = new Board(game->getBoard());
-    LOG("end of first constructor...")
-    this->num_player_tokens = game->getNumPlayerTokens();
-    this->num_ai_tokens = game->getNumAITokens();
-}*/
 
 Game::~Game()
 {
@@ -66,16 +58,31 @@ Tokens* Game::getPlayerTokens()
 //***************************************************************************
 void Game::start()
 {
-    current_player = PLAYER;
+    //current_player = PLAYER;
     while (true)
     {
         while (current_player == PLAYER)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
-        ai->get_move();
+        //ai->get_move();
+        //window->Refresh();
     }   
     //std::terminate();
+}
+
+void Game::check_end_game()
+{
+    if (ai_tokens->getNumTokens() == 0)
+    {
+        LOG("GAME OVER - PLAYER WINS")
+        current_player = NONE;
+    }
+    else if (player_tokens->getNumTokens() == 0)
+    {
+        LOG("GAME OVER - AI WINS")
+        current_player = NONE;
+    }
 }
 //**************
 //remove reference to window if not using SetStatusText()
@@ -94,9 +101,11 @@ void Game::reportClick(BoardTile* tile)
     if (current_player == PLAYER)
     {
         //no tiles are selected and the current player has a piece on the selected tile
-        if (!is_a_tile_selected && tile->isTokenPresent() /*&& tile->getToken()->getPlayer() == PLAYER*/)
+        if (!is_a_tile_selected && tile->isTokenPresent() && tile->getToken()->getPlayer() == PLAYER)
         {
             tile->setSelected();
+            tile->Refresh();
+            tile->Update();
             is_a_tile_selected = true;
             selected = tile;
         }
@@ -105,6 +114,8 @@ void Game::reportClick(BoardTile* tile)
         else if (is_a_tile_selected && tile == selected)
         {
             tile->setUnselected();
+            tile->Refresh();
+            tile->Update();
             selected = nullptr;
             is_a_tile_selected = false;
         }
@@ -112,7 +123,18 @@ void Game::reportClick(BoardTile* tile)
         //a tile is selected and the player clicks on another tile to make a move
         else if (is_a_tile_selected && !tile->isTokenPresent() && selected != tile)
         {
-            move(selected, tile);
+            if(validateMove(selected->getRow(), selected->getCol(), tile->getRow(), tile->getCol()))
+            {
+                //LOG("move player")
+                move(selected, tile);
+                check_end_game();
+                if (current_player == AI)
+                {
+                    //LOG("move ai")
+                    ai->get_move();
+                    check_end_game();
+                }
+            }
         }
     }
 }
@@ -272,8 +294,12 @@ bool Game::move(BoardTile* from, BoardTile* to)
         selected = nullptr;
         is_a_tile_selected = false;
         bool jump_move = false;
-        from->paintNow();
-        to->paintNow();
+        //from->paintNow();
+        from->Refresh();
+        from->Update();
+        //to->paintNow();
+        to->Refresh();
+        to->Update();
         //a jump was made
         if (abs(to_row - from_row) == 2)
         {  
@@ -501,6 +527,7 @@ bool Game::move(BoardTile* from, BoardTile* to)
                                 if (getTile(row + 1, col - 1)->getToken()->getPlayer() == AI)
                                 {
                                     std::cout << "JUMP available to PLAYER king token to the back left\n";
+
                                     return false;
                                 }
                             }
@@ -535,7 +562,26 @@ bool Game::move(BoardTile* from, BoardTile* to)
                             if (getTile(row + 1, col - 1)->getToken()->getPlayer() == PLAYER)
                             {
                                 std::cout << "JUMP available to PLAYER regular token the left\n";
-                                return false;
+                                token = getTile(row, col)->getToken();
+                                token->setRow(row + 2);
+                                token->setCol(col - 2);
+                                if (token->getRow() == 7)
+                                {
+                                    token->setKing();
+                                }
+                                getTile(row, col)->removeToken();
+
+                                getTile(row + 2, col - 2)->Refresh();
+                                getTile(row + 2, col - 2)->Update();
+
+                                getTile(row + 2, col - 2)->setToken(token);
+
+                                token = getTile(row + 1, col - 1)->getToken();
+                                player_tokens->remove(token);
+                                getTile(row + 1, col - 1)->removeToken();
+
+                                SWITCH_TURN(current_player)
+                                return true;
                             }
                         }
                     }
@@ -547,7 +593,27 @@ bool Game::move(BoardTile* from, BoardTile* to)
                             if (getTile(row + 1, col + 1)->getToken()->getPlayer() == PLAYER)
                             {
                                 std::cout << "JUMP available to PLAYER regular token on the right\n";
-                                return false;
+                                
+                                token = getTile(row, col)->getToken();
+                                token->setRow(row + 2);
+                                token->setCol(col + 2);
+                                if (token->getRow() == 7)
+                                {
+                                    token->setKing();
+                                }
+                                getTile(row, col)->removeToken();
+
+                                getTile(row + 2, col + 2)->Refresh();
+                                getTile(row + 2, col + 2)->Update();
+
+                                getTile(row + 2, col + 2)->setToken(token);
+
+                                token = getTile(row + 1, col + 1)->getToken();
+                                player_tokens->remove(token);
+                                getTile(row + 1, col + 1)->removeToken();
+
+                                SWITCH_TURN(current_player)
+                                return true;
                             }
                         }
                     }
@@ -566,7 +632,26 @@ bool Game::move(BoardTile* from, BoardTile* to)
                                 if (getTile(row - 1, col - 1)->getToken()->getPlayer() == PLAYER)
                                 {
                                     std::cout << "JUMP available to PLAYER king token to the back left\n";
-                                    return false;
+                                    token = getTile(row, col)->getToken();
+                                    token->setRow(row - 2);
+                                    token->setCol(col - 2);
+                                    if (token->getRow() == 7)
+                                    {
+                                        token->setKing();
+                                    }
+                                    getTile(row, col)->removeToken();
+
+                                    getTile(row - 2, col - 2)->Refresh();
+                                    getTile(row - 2, col - 2)->Update();
+
+                                    getTile(row - 2, col - 2)->setToken(token);
+
+                                    token = getTile(row - 1, col - 1)->getToken();
+                                    player_tokens->remove(token);
+                                    getTile(row - 1, col - 1)->removeToken();
+
+                                    SWITCH_TURN(current_player)
+                                    return true;
                                 }
                             }
                         }
@@ -579,7 +664,26 @@ bool Game::move(BoardTile* from, BoardTile* to)
                                 if (getTile(row - 1, col + 1)->getToken()->getPlayer() == PLAYER)
                                 {
                                     std::cout << "JUMP available to PLAYER king token on to the back right\n";
-                                    return false;
+                                    token = getTile(row, col)->getToken();
+                                    token->setRow(row - 2);
+                                    token->setCol(col + 2);
+                                    if (token->getRow() == 7)
+                                    {
+                                        token->setKing();
+                                    }
+                                    getTile(row, col)->removeToken();
+
+                                    getTile(row - 2, col + 2)->Refresh();
+                                    getTile(row - 2, col + 2)->Update();
+
+                                    getTile(row - 2, col + 2)->setToken(token);
+
+                                    token = getTile(row - 1, col + 1)->getToken();
+                                    player_tokens->remove(token);
+                                    getTile(row - 1, col + 1)->removeToken();
+
+                                    SWITCH_TURN(current_player)
+                                    return true;
                                 }
                             }
                         }

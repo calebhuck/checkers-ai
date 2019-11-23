@@ -2,29 +2,14 @@
 
 BoardTile::BoardTile(Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
 {
+    //red_token = wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170);
+    //red_king = wxIcon("./img/token_red_king.png", wxBITMAP_TYPE_PNG, 170, 170);
+    //white_token = wxIcon("./img/token_white.png", wxBITMAP_TYPE_PNG, 170, 170);
+    //white_king = wxIcon("./img/token_white_king.png", wxBITMAP_TYPE_PNG, 170, 170);
     this->game = game;
     this->selected = false;
     this->token_present = false;
     token = nullptr;
-}
-
-BoardTile::BoardTile(BoardTile* old_tile)
-{
-    std::cout << "BOARDTILE CONSTRUCTOR\n";
-    this->game = nullptr;
-    this->token_present = old_tile->isTokenPresent();
-    std::cout << "made it here.........\n";
-    if (token_present)
-    {
-        //std::cout << "creating copy token\n";
-        //this->token = new Token(old_tile->getToken());
-    }
-    else
-    {
-        //std::cout << "token is not present, set nullptr\n";
-        this->token = nullptr;
-    } 
-    std::cout << "exiting boardTIle constructor\n";
 }
 
  BoardTile::~BoardTile()
@@ -40,7 +25,6 @@ void BoardTile::paintEvent(wxPaintEvent & evt)
 {
     wxPaintDC dc(this);
     render(dc);
-    evt.Skip();
 }
 
 void BoardTile::paintNow()
@@ -71,17 +55,25 @@ void BoardTile::render(wxDC&  dc)
         if (token->getPlayer() == PLAYER)
         {
             if (!token->isKing())
-                dc.DrawIcon(wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
-            else                
-                dc.DrawIcon(wxIcon("./img/token_red_king.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            {
+                dc.DrawIcon(/*this->red_token*/wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            }
+            else
+            {                
+                dc.DrawIcon(/*this->red_king*/wxIcon("./img/token_red_king.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            }
         }
 
         else if (token->getPlayer() == AI)
         { 
             if (!token->isKing())
-                dc.DrawIcon(wxIcon("./img/token_white.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
-            else                
-                dc.DrawIcon(wxIcon("./img/token_white_king.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            {
+                dc.DrawIcon(/*this->white_token*/wxIcon("./img/token_white.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            }
+            else
+            {                
+                dc.DrawIcon(/*this->white_king*/wxIcon("./img/token_white_king.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+            }
         }
     }
 }
@@ -89,7 +81,7 @@ void BoardTile::render(wxDC&  dc)
 void BoardTile::onClick(wxMouseEvent& event)
 {    
     game->reportClick(this);
-    this->paintNow();
+    //this->paintNow();
     event.Skip();
 }
 

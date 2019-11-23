@@ -1,6 +1,6 @@
 #if !defined GAME_H
 #define GAME_H
-
+#include <wx/wx.h>
 #include <chrono>
 #include <thread>
 #include "Tokens.h"
@@ -17,8 +17,7 @@ class BoardTile;
 class Game
 {
     public:
-        Game(Board* board);
-        //Game(Game* game);
+        Game(Board* board, wxFrame* window);
         ~Game();
         void reportClick(BoardTile* tile);
         BoardTile* getTile(int row, int col);
@@ -30,6 +29,7 @@ class Game
         PlayerType getCurrentPlayer();
         Board* getBoard();
         void addToken(Token* token);
+        void check_end_game();
 
     private:
         Board* board;
@@ -40,6 +40,7 @@ class Game
         MiniMaxAI* ai;
         Tokens* ai_tokens;
         Tokens* player_tokens;
+        wxFrame* window;
 };
 
 #endif

@@ -11,7 +11,6 @@ class BoardTile: public wxPanel
 {
     public:
         BoardTile(Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size);
-        BoardTile(BoardTile* old_tile);
         ~BoardTile();
 
         void paintEvent(wxPaintEvent & evt);
@@ -33,6 +32,10 @@ class BoardTile: public wxPanel
         DECLARE_EVENT_TABLE();
 
     private:
+        wxIcon red_token;
+        wxIcon red_king;
+        wxIcon white_token;
+        wxIcon white_king;
         bool selected;
         bool token_present;
         Token* token;

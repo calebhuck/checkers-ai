@@ -1,6 +1,8 @@
 #include "MiniMaxAI.h"
+#include <wx/wx.h>
 
 #define LOG(x) std::cout << x << std::endl;
+#define DEPTH 10
 //*****************************************************Contructors/Destructors*****************************************************
 MiniMaxAI::MiniMaxAI(Game* game)
 {
@@ -15,37 +17,11 @@ MiniMaxAI::~MiniMaxAI()
 //*****************************************************GET MOVE*****************************************************
 void MiniMaxAI::get_move()
 {
-    //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-    /*
-    //print the board
-    for (int i = 0; i < 8; i++)
-    {
-        for (int j = 0; j < 8; j++)
-        {
-            if (board[i * 8 + j] == nullptr)
-                std:: cout << "x ";
-            else
-            {
-                if (board[i * 8 + j]->isKing())
-                    std::cout << "k ";
-                else
-                    std::cout << board[i * 8 + j]->getPlayer() << " ";
-            }
-            
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "\n\n";
-    */
-
-
-
     //create the array of AIMove structures so each thread can return best move with no race conditions
     AIMove** moves;
     moves = new AIMove*[12];
     for (int i = 0; i < 12; i++)
         moves[i] = nullptr;
-
 
     //determine how many threads to make (equal to the number of ai tokens on the board) and start the threads
     int num_threads = ai_tokens->getNumTokens();
@@ -53,6 +29,7 @@ void MiniMaxAI::get_move()
     int index = 0;
     Token* temp;
     Token** board;
+    int depth = DEPTH;
     while (count < num_threads)
     {
         temp = ai_tokens->getToken(index);
@@ -82,8 +59,7 @@ void MiniMaxAI::get_move()
             }
 
             //create worker to evaluate possible moves of this token with its own copy of board
-            LOG("WORKER " + std::to_string(count) + " CREATED")
-            workers[count] = std::thread(&MiniMaxAI::findMove, this, temp->getID(), board, moves);
+            workers[count] = std::thread(&MiniMaxAI::findMove, this, temp->getID(), depth, AI, board, moves);
             count++;
         }
         index++;
@@ -98,18 +74,18 @@ void MiniMaxAI::get_move()
     }
     
     //find the best move out of best possible from each thread
-    int max = -1;
+    int max = -9999;
     AIMove* best_move = nullptr;
-    LOG("Before find best move")
     for (int i = 0; i < 12; i++)
     {
         if (moves[i] != nullptr)
         {
-            
+            LOG("Possible score = " + std::to_string(moves[i]->score))
             if (moves[i]->score > max)
             {
-                LOG("before set best")
+                LOG("setting new best.......")
                 best_move = moves[i]; 
+                max = best_move->score;
             }
         }
     }
@@ -118,7 +94,7 @@ void MiniMaxAI::get_move()
     //if a best move exists, make the move
     if (best_move != nullptr) 
     {
-        LOG("MAKINGG BEST MOVE")
+        LOG("Move Taken = " + std::to_string(best_move->score) + "\n\n\n")
         BoardTile* from = game->getTile(best_move->from_row, best_move->from_col);
         BoardTile* to = game->getTile(best_move->to_row, best_move->to_col);
         game->move(from, to);
@@ -126,6 +102,1055 @@ void MiniMaxAI::get_move()
     else
     {
         LOG("Player Won... I think... No best move\n");
+    }
+
+    for (int i = 0; i < 12; i++)
+    {
+        if (moves[i] != nullptr)
+            delete moves[i];
+    }
+    delete[] moves;
+}
+
+Token** MiniMaxAI::getBoardCopy(Token** old_board)
+{
+    Token** new_board = new Token*[64];
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (old_board[i * 8 + j] != nullptr)
+            {
+                new_board[i * 8 + j] = new Token(old_board[i * 8 + j]);
+            }
+            else
+            {
+                new_board[i * 8 + j] = nullptr;
+            }
+            
+        }
+    }
+    return new_board;
+}
+
+//*****************************************************FIND MOVE*****************************************************
+int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMove** moves)
+{
+    if (depth == DEPTH)
+    {
+        int row = -1;
+        int col = -1;
+        int best_score = -9999;
+        Token* token = nullptr;
+        Token** temp_board;
+        AIMove* ai_move = nullptr;
+
+        //find the token that this thread is responsible for
+        for (int i = 0; i < 64; i++)
+        {
+            if (board[i] != nullptr)
+            {
+                if (board[i]->getID() == id && board[i]->getPlayer() == AI)
+                {
+                    token = board[i];
+                    row = token->getRow();
+                    col = token->getCol();
+                }
+            }
+        }
+        if (token == nullptr) return -1;
+
+        //check each possible move for this particular token and search the resulting tree for moves recursively
+        if (validateMove(board, row, col, row + 1, col + 1))
+        {
+            temp_board = getBoardCopy(board);
+            move(temp_board, row, col, row + 1, col + 1);
+            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+            //for (int i = 0; i < 64; i++)
+            //{
+            //    if (temp_board[i] != nullptr)
+            //        delete temp_board[i];
+            //}
+            //delete[] temp_board;
+
+            if (score >= best_score)
+            {
+                if (ai_move == nullptr)
+                {
+                    ai_move = new AIMove();
+                    ai_move->from_row = row;
+                    ai_move->from_col = col;
+                }
+                ai_move->score = score;
+                ai_move->to_row = row + 1;
+                ai_move->to_col = col + 1;
+                best_score = score;
+            }
+        }
+
+        if (validateMove(board, row, col, row + 1, col - 1))
+        {
+            temp_board = getBoardCopy(board);
+            move(temp_board, row, col, row + 1, col - 1);
+            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+            //for (int i = 0; i < 64; i++)
+            //{
+            //    if (temp_board[i] != nullptr)
+            //        delete temp_board[i];
+            //}
+            //delete[] temp_board;
+
+            if (score >= best_score)
+            {
+                if (ai_move == nullptr)
+                {
+                    ai_move = new AIMove();
+                    ai_move->from_row = row;
+                    ai_move->from_col = col;
+                }
+                ai_move->score = score;
+                ai_move->to_row = row + 1;
+                ai_move->to_col = col - 1;
+                best_score = score;
+            }
+        }
+
+        if (validateMove(board, row, col, row + 2, col + 2))
+        {
+            temp_board = getBoardCopy(board);
+            move(temp_board, row, col, row + 2, col + 2);
+            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+            //for (int i = 0; i < 64; i++)
+            //{
+            //    if (temp_board[i] != nullptr)
+            //        delete temp_board[i];
+            //}
+            //delete[] temp_board;
+            if (score >= best_score)
+            {
+                if (ai_move == nullptr)
+                {
+                    ai_move = new AIMove();
+                    ai_move->from_row = row;
+                    ai_move->from_col = col;
+                }
+                ai_move->score = score;
+                ai_move->to_row = row + 2;
+                ai_move->to_col = col + 2;
+                best_score = score;
+                temp_board = getBoardCopy(board);
+                move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
+                if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
+                {
+                    std::cout << "double jump found\n";
+                    best_score += 100; 
+                    ai_move->score+=100;
+                }
+                if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
+                {
+                    std::cout << "double jump found\n";
+                    best_score += 100; 
+                    ai_move->score+=100;
+                }
+                //for (int i = 0; i < 64; i++)
+                //{
+                //    if (temp_board[i] != nullptr)
+                //        delete temp_board[i];
+                //}
+                //delete[] temp_board;
+            }
+        }
+
+        if (validateMove(board, row, col, row + 2, col - 2))
+        {
+            temp_board = getBoardCopy(board);
+            move(temp_board, row, col, row + 2, col - 2);
+            int score =findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+            //for (int i = 0; i < 64; i++)
+            //{
+            //    if (temp_board[i] != nullptr)
+            //        delete temp_board[i];
+            //}
+            //delete[] temp_board;
+            if (score >= best_score)
+            {
+                if (ai_move == nullptr)
+                {
+                    ai_move = new AIMove();
+                    ai_move->from_row = row;
+                    ai_move->from_col = col;
+                }
+                ai_move->score = score;
+                ai_move->to_row = row + 2;
+                ai_move->to_col = col - 2;
+                best_score = score;
+                temp_board = getBoardCopy(board);
+                move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
+                if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
+                {
+                    std::cout << "double jump found\n";
+                    best_score += 100; 
+                    ai_move->score+=100;
+                }
+                if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
+                {
+                    std::cout << "double jump found\n";
+                    best_score += 100; 
+                    ai_move->score+=100;
+                }
+                //for (int i = 0; i < 64; i++)
+                //{
+                //    if (temp_board[i] != nullptr)
+                //        delete temp_board[i];
+                //}
+                //delete[] temp_board;
+                std::cout << "new best move to beat: " << best_score << std::endl;
+            }
+        }
+
+        //if the token is a king, check moves that move backward
+        if (token->isKing())
+        {
+            if (validateMove(board, row, col, row - 1, col + 1))
+            {
+                LOG("king move backward right")
+                temp_board = getBoardCopy(board);
+                move(temp_board, row, col, row - 1, col + 1);
+                int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+                //for (int i = 0; i < 64; i++)
+                //{
+                //    if (temp_board[i] != nullptr)
+                //        delete temp_board[i];
+                //}
+                //delete[] temp_board;
+                if (score >= best_score)
+                {
+                    if (ai_move == nullptr)
+                    {
+                        ai_move = new AIMove();
+                        ai_move->from_row = row;
+                        ai_move->from_col = col;
+                    }
+                    ai_move->score = score;
+                    ai_move->to_row = row - 1;
+                    ai_move->to_col = col + 1;
+                    best_score = score;
+                }
+            }
+
+            if (validateMove(board, row, col, row - 1, col - 1))
+            {
+                LOG("king move backward left")
+                temp_board = getBoardCopy(board);
+                move(temp_board, row, col, row - 1, col - 1);
+                int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+                //for (int i = 0; i < 64; i++)
+                //{
+                //    if (temp_board[i] != nullptr)
+                //        delete temp_board[i];
+                //}
+                //delete[] temp_board;
+                if (score >= best_score)
+                {
+                    if (ai_move == nullptr)
+                    {
+                        ai_move = new AIMove();
+                        ai_move->from_row = row;
+                        ai_move->from_col = col;
+                    }
+                    ai_move->score = score;
+                    ai_move->to_row = row - 1;
+                    ai_move->to_col = col - 1;
+                    best_score = score;
+                }
+            }
+
+            if (validateMove(board, row, col, row - 2, col + 2))
+            {
+                temp_board = getBoardCopy(board);
+                move(temp_board, row, col, row - 2, col + 2);
+                int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+                //for (int i = 0; i < 64; i++)
+                //{
+                //    if (temp_board[i] != nullptr)
+                //        delete temp_board[i];
+                //}
+                //delete[] temp_board;
+                if (score >= best_score)
+                {
+                    if (ai_move == nullptr)
+                    {
+                        ai_move = new AIMove();
+                        ai_move->from_row = row;
+                        ai_move->from_col = col;
+                    }
+                    ai_move->score = score;
+                    ai_move->to_row = row - 2;
+                    ai_move->to_col = col + 2;
+                    best_score = score;
+                    temp_board = getBoardCopy(board);
+                    move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col + 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col - 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+                    //for (int i = 0; i < 64; i++)
+                    //{
+                    //    if (temp_board[i] != nullptr)
+                    //        delete temp_board[i];
+                    //}
+                    //delete[] temp_board;
+                }
+            }
+
+            if (validateMove(board, row, col, row - 2, col - 2))
+            {
+                temp_board = getBoardCopy(board);
+                move(temp_board, row, col, row - 2, col - 2);
+                int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+                //for (int i = 0; i < 64; i++)
+                //{
+                //    if (temp_board[i] != nullptr)
+                //        delete temp_board[i];
+                //}
+                //delete[] temp_board;
+                if (score >= best_score)
+                {
+                    if (ai_move == nullptr)
+                    {
+                        ai_move = new AIMove();
+                        ai_move->from_row = row;
+                        ai_move->from_col = col;
+                    }
+                    ai_move->score = score;
+                    ai_move->to_row = row - 2;
+                    ai_move->to_col = col - 2;
+                    best_score = score;
+                    temp_board = getBoardCopy(board);
+                    move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col + 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+                    if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col - 2))
+                    {
+                        std::cout << "double jump found\n";
+                        best_score += 100; 
+                        ai_move->score+=100;
+                    }
+                    //for (int i = 0; i < 64; i++)
+                    //{
+                    //    if (temp_board[i] != nullptr)
+                    //        delete temp_board[i];
+                    //}
+                    //delete[] temp_board;
+                }
+            }
+        }
+
+        //return the move if one was found
+        if (ai_move != nullptr)
+        {
+            LOG("SCORE: " + std::to_string(ai_move->score))
+            moves[id] = ai_move;
+        }
+        else
+        {
+            moves[id] = nullptr;
+        }
+
+        //for (int i = 0; i < 64; i++)
+        //{
+        //    if (board[i] != nullptr)
+        //        delete board[i];
+        //}
+        //delete[] board;
+    }
+
+    //this is the last level of the tree, just return the score
+    if (depth == 1)
+    {
+        return getScore(board);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //this level represents the ai's turn
+    if (turn == AI)
+    {
+        Token* token;
+        Token** temp_board;
+        int best_score = -9999;
+        int row;
+        int col;
+        for (int i = 0; i < 64; i++)
+        {
+            token = board[i];
+            if (token != nullptr)
+            {
+                if (token->getPlayer() == AI)
+                {
+                    row = token->getRow();
+                    col = token->getCol();
+
+                    if (validateMove(board, row, col, row + 1, col + 1))
+                    {
+                        temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row + 1, col + 1);
+                        int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+
+                        if (score > best_score)
+                        {
+                            best_score = score;
+                        }
+                    }
+
+                    if (validateMove(board, row, col, row + 1, col - 1))
+                    {
+                        temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row + 1, col - 1);
+
+            //for (int i = 0; i < 64; i++)
+            //{
+            //    if (temp_board[i] != nullptr)
+            //        delete temp_board[i];
+            //}
+            //delete[] temp_board;
+            
+                        int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+
+                        if (score >= best_score)
+                        {
+                            best_score = score;
+                        }
+                    }
+
+                    if (validateMove(board, row, col, row + 2, col + 2))
+                    {
+                        temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row + 2, col + 2);
+                        int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+
+                        if (score >= best_score)
+                        {
+                            best_score = score;
+                            temp_board = getBoardCopy(board);
+                            int new_row = row + 2;
+                            int new_col = col + 2;
+                            move(temp_board, row, col, new_row, new_col);
+                            if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+                            if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+                        }
+                    }
+
+                    if (validateMove(board, row, col, row + 2, col - 2))
+                    {
+                        temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row + 2, col - 2);
+                        int score =findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+
+                        if (score >= best_score)
+                        {
+                            best_score = score;
+                            temp_board = getBoardCopy(board);
+                            int new_row = row + 2;
+                            int new_col = col - 2;
+                            move(temp_board, row, col, row + 2, col - 2);
+                            if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+                            if (validateMove(temp_board,new_row, new_col, new_row + 2, new_col - 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+                        }
+                    }
+
+                    //if the token is a king, check moves that move backward
+                    if (token->isKing())
+                    {
+                        if (validateMove(board, row, col, row - 1, col + 1))
+                        {
+                            LOG("king move backward right")
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row - 1, col + 1);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+
+                            if (score >= best_score)
+                            {
+                                best_score = score;
+                            }
+                        }
+
+                        if (validateMove(board, row, col, row - 1, col - 1))
+                        {
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row - 1, col - 1);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+
+                            if (score >= best_score)
+                            {
+                                best_score = score;
+                            }
+                        }
+
+                        if (validateMove(board, row, col, row - 2, col + 2))
+                        {
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row - 2, col + 2);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+
+                            if (score >= best_score)
+                            {
+                                best_score = score;
+                                temp_board = getBoardCopy(board);
+                                int new_row = row - 2;
+                                int new_col = col + 2;
+                                move(temp_board, row, col, new_row, new_col);
+                                if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                //for (int i = 0; i < 64; i++)
+                                //{
+                                //    if (temp_board[i] != nullptr)
+                                //        delete temp_board[i];
+                                //}
+                                //delete[] temp_board;
+                            }
+                        }
+
+                        if (validateMove(board, row, col, row - 2, col - 2))
+                        {
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row - 2, col - 2);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+
+                            if (score >= best_score)
+                            {
+                                best_score = score;
+                                temp_board = getBoardCopy(board);
+                                int new_row = row - 2;
+                                int new_col = col -2;
+                                move(temp_board, row, col, new_row, new_col);
+                                if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                //for (int i = 0; i < 64; i++)
+                                //{
+                                //    if (temp_board[i] != nullptr)
+                                //        delete temp_board[i];
+                                //}
+                                //delete[] temp_board;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (best_score == -9999)
+            return 9999;
+        else 
+            return best_score;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    else if (turn == PLAYER)
+    {
+        Token* token;
+        Token** temp_board;
+        int best_score = 9999; //int this case, best for player, not ai
+        int row;
+        int col;
+        for (int i = 0; i < 64; i++)
+        {
+            token = board[i];
+            if (token != nullptr)
+            {
+                if (token->getPlayer() == PLAYER)
+                {
+                    row = token->getRow();
+                    col = token->getCol();
+
+                    if (validateMove(board, row, col, row - 1, col + 1))
+                    {
+                        temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row - 1, col + 1);
+                        int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+                        
+            
+                        if (score < best_score)
+                        {
+                            best_score = score;
+                        }
+                    }
+
+                    if (validateMove(board, row, col, row - 1, col - 1))
+                    {
+                        temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row + 1, col - 1);
+                        int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+            
+                        if (score < best_score)
+                        {
+                            best_score = score;
+                        }
+                    }
+
+                    if (validateMove(board, row, col, row - 2, col + 2))
+                    {
+                        Token** temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row - 2, col + 2);
+                        int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+            
+                        if (score < best_score)
+                        {
+                            best_score = score;
+
+                            temp_board = getBoardCopy(board);
+                            int new_row = row - 2;
+                            int new_col = col + 2;
+                            move(temp_board, row, col, new_row, new_col);
+                            if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+                            if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+            
+                        }
+                    }
+
+                    if (validateMove(board, row, col, row - 2, col - 2))
+                    {
+                        temp_board = getBoardCopy(board);
+                        move(temp_board, row, col, row + 2, col - 2);
+                        int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                        //for (int i = 0; i < 64; i++)
+                        //{
+                        //    if (temp_board[i] != nullptr)
+                        //        delete temp_board[i];
+                        //}
+                        //delete[] temp_board;
+            
+                        if (score < best_score)
+                        {
+                            best_score = score;
+                            temp_board = getBoardCopy(board);
+                            int new_row = row + 2;
+                            int new_col = col - 2;
+                            move(temp_board, row, col, new_row, new_col);
+                            if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+                            if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
+                            {
+                                std::cout << "double jump found\n";
+                                best_score += 100; 
+                            }
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+                        }
+                    }
+
+                    //if the token is a king, check moves that move backward
+                    if (token->isKing())
+                    {
+                        if (validateMove(board, row, col, row + 1, col + 1))
+                        {
+                            LOG("king move backward right")
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row + 1, col + 1);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+            
+                            if (score < best_score)
+                            {
+                                best_score = score;
+                            }
+                        }
+
+                        if (validateMove(board, row, col, row + 1, col - 1))
+                        {
+                            LOG("king move backward left")
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row + 1, col - 1);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+            
+                            if (score < best_score)
+                            {
+                                best_score = score;
+                            }
+                        }
+
+                        if (validateMove(board, row, col, row + 2, col + 2))
+                        {
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row + 2, col + 2);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+            
+                            if (score < best_score)
+                            {
+                                best_score = score;
+                                temp_board = getBoardCopy(board);
+                                int new_row = row + 2;
+                                int new_col = col + 2;
+                                move(temp_board, row, col, new_row, new_col);
+                                if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                //for (int i = 0; i < 64; i++)
+                                //{
+                                //    if (temp_board[i] != nullptr)
+                                //        delete temp_board[i];
+                                //}
+                                //delete[] temp_board;
+                            }
+                        }
+
+                        if (validateMove(board, row, col, row + 2, col - 2))
+                        {
+                            temp_board = getBoardCopy(board);
+                            move(temp_board, row, col, row + 2, col - 2);
+                            int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
+
+                            //for (int i = 0; i < 64; i++)
+                            //{
+                            //    if (temp_board[i] != nullptr)
+                            //        delete temp_board[i];
+                            //}
+                            //delete[] temp_board;
+            
+                            if (score < best_score)
+                            {
+                                best_score = score;
+                                temp_board = getBoardCopy(board);
+                                int new_row = row + 2;
+                                int new_col = col - 2;
+                                move(temp_board, row, col, new_row, new_col);
+                                if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col + 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+                                    if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col - 2))
+                                {
+                                    std::cout << "double jump found\n";
+                                    best_score += 100;
+                                }
+
+                                //for (int i = 0; i < 64; i++)
+                                //{
+                                //    if (temp_board[i] != nullptr)
+                                //        delete temp_board[i];
+                                //}
+                                //delete[] temp_board;
+            
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (best_score == 9999)
+            return -9999;
+        else
+            return best_score;
     }
 }
 
@@ -161,55 +1186,10 @@ int MiniMaxAI::getScore(Token** board)
         return ai_tokens - player_tokens;
 }
 
-//*****************************************************FIND MOVE*****************************************************
-void MiniMaxAI::findMove(int id, Token** board, AIMove** moves)
-{
-    double rand = 0;
-    while(rand < 10000000)
-    {
-        rand+=.05;
-    }
-    int row;
-    int col;
-    AIMove* move = new AIMove;
-    for (int i = 0; i < 64; i++)
-    {
-        if (board[i] != nullptr)
-        {
-            if (board[i]->getID() == id && board[i]->getPlayer() == AI)
-            {
-                row = board[i]->getRow();
-                col = board[i]->getCol();
-            }
-        }
-    }
-
-    if (validateMove(board, row, col, row + 1, col + 1))
-    {
-        //LOG("Found move + col")
-        move->score = getScore(board) + 1;
-        move->from_row = row;
-        move->from_col = col;
-        move->to_row = row + 1;
-        move->to_col = col + 1;
-        moves[id] = move;
-    }
-    if (validateMove(board, row, col, row + 1, col - 1))
-    {
-        //LOG("Found move - col")
-        move->score = getScore(board);
-        move->from_row = row;
-        move->from_col = col;
-        move->to_row = row + 1;
-        move->to_col = col - 1;
-        moves[id] = move;
-    }
-}
-
 //*****************************************************GET BOARD TOKEN*****************************************************
-Token* getBoardToken(int row, int col)
+Token* MiniMaxAI::getBoardToken(Token** board, int row, int col)
 {
-    return nullptr;
+    return board[row * 8 + col];
 }
 
 
@@ -217,10 +1197,10 @@ Token* getBoardToken(int row, int col)
 bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_row, int to_col)
 {
     //if to or from location is out of bounds, return false right away and print error message
-    if (from_row < 0 || from_row > 7){ std::cout << "Invalid from_row location sent to validateMove...\n"; return false;}
-    if (from_col < 0 || from_col > 7){ std::cout << "Invalid from_col location sent to validateMove...\n"; return false;}
-    if (to_row < 0 || to_row > 7){ std::cout << "Invalid to_row location sent to validateMove...\n"; return false;}
-    if (to_col < 0 || to_col > 7){ std::cout << "Invalid to_col location sent to validateMove...\n"; return false;}
+    if (from_row < 0 || from_row > 7){ /*std::cout << "Invalid from_row location sent to validateMove...\n";*/ return false;}
+    if (from_col < 0 || from_col > 7){ /*std::cout << "Invalid from_col location sent to validateMove...\n";*/ return false;}
+    if (to_row < 0 || to_row > 7){ /*std::cout << "Invalid to_row location sent to validateMove...\n";*/ return false;}
+    if (to_col < 0 || to_col > 7){ /*std::cout << "Invalid to_col location sent to validateMove...\n";*/ return false;}
     //LOG("VALID Parameters")
     Token* token = board[from_row * 8 + from_col];
     if (token == nullptr) return false;
