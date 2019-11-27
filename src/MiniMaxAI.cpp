@@ -2,7 +2,7 @@
 #include <wx/wx.h>
 
 #define LOG(x) std::cout << x << std::endl;
-#define DEPTH 10
+#define DEPTH 4
 //*****************************************************Contructors/Destructors*****************************************************
 MiniMaxAI::MiniMaxAI(Game* game)
 {
@@ -29,7 +29,7 @@ void MiniMaxAI::get_move()
     int index = 0;
     Token* temp;
     Token** board;
-    int depth = DEPTH;
+    //int depth = DEPTH;
     while (count < num_threads)
     {
         temp = ai_tokens->getToken(index);
@@ -59,19 +59,21 @@ void MiniMaxAI::get_move()
             }
 
             //create worker to evaluate possible moves of this token with its own copy of board
-            workers[count] = std::thread(&MiniMaxAI::findMove, this, temp->getID(), depth, AI, board, moves);
+            //workers[count] = std::thread(&MiniMaxAI::findMove, this, temp->getID(), DEPTH, AI, board, moves);
+            findMove(temp->getID(), DEPTH, AI, board, moves);
+            LOG("FINISHED ONE FIND MOVE CALL")
             count++;
         }
         index++;
     }
-
+    LOG("FINISHED ALL FINDMOVE CALLS")
     //wait for each thread to join
-    count = 0;
-    while (count < num_threads)
-    {
-        workers[count].join();
-        count++;
-    }
+    //count = 0;
+    //while (count < num_threads)
+    //{
+    //    workers[count].join();
+    //    count++;
+    //}
     
     //find the best move out of best possible from each thread
     int max = -9999;
@@ -95,42 +97,53 @@ void MiniMaxAI::get_move()
     if (best_move != nullptr) 
     {
         LOG("Move Taken = " + std::to_string(best_move->score) + "\n\n\n")
-        BoardTile* from = game->getTile(best_move->from_row, best_move->from_col);
-        BoardTile* to = game->getTile(best_move->to_row, best_move->to_col);
-        game->move(from, to);
+        if (game->getTile(best_move->from_row, best_move->from_col) != nullptr && game->getTile(best_move->to_row, best_move->to_col) != nullptr)
+        {
+            BoardTile* from = game->getTile(best_move->from_row, best_move->from_col);
+            BoardTile* to = game->getTile(best_move->to_row, best_move->to_col);
+            game->move(from, to);
+        }
     }
     else
     {
         LOG("Player Won... I think... No best move\n");
     }
-
+    LOG("deleting moves")
     for (int i = 0; i < 12; i++)
     {
         if (moves[i] != nullptr)
             delete moves[i];
     }
     delete[] moves;
+    LOG("moves deleted")
 }
 
 Token** MiniMaxAI::getBoardCopy(Token** old_board)
 {
-    Token** new_board = new Token*[64];
-    for (int i = 0; i < 8; i++)
+    try 
     {
-        for (int j = 0; j < 8; j++)
+        Token** new_board = new Token*[64];
+        for (int i = 0; i < 8; i++)
         {
-            if (old_board[i * 8 + j] != nullptr)
+            for (int j = 0; j < 8; j++)
             {
-                new_board[i * 8 + j] = new Token(old_board[i * 8 + j]);
+                if (old_board[i * 8 + j] != nullptr)
+                {
+                    new_board[i * 8 + j] = new Token(old_board[i * 8 + j]);
+                }
+                else
+                {
+                    new_board[i * 8 + j] = nullptr;
+                }
+                
             }
-            else
-            {
-                new_board[i * 8 + j] = nullptr;
-            }
-            
         }
+        return new_board;
     }
-    return new_board;
+    catch (...)
+    {
+        std::cout << "MEMORY ALLOC FAILED&&&&&&&&&&&&&&&%%%%%%%%%%%%%%%%%%%%%******************************\n";
+    }
 }
 
 //*****************************************************FIND MOVE*****************************************************
@@ -138,6 +151,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
 {
     if (depth == DEPTH)
     {
+        LOG("STARTING MOVE SEARCH")
         int row = -1;
         int col = -1;
         int best_score = -9999;
@@ -159,10 +173,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
             }
         }
         if (token == nullptr) return -1;
+        LOG("BREAD")
 
         //check each possible move for this particular token and search the resulting tree for moves recursively
         if (validateMove(board, row, col, row + 1, col + 1))
         {
+            LOG("checking 1")
             temp_board = getBoardCopy(board);
             move(temp_board, row, col, row + 1, col + 1);
             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -187,10 +203,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 ai_move->to_col = col + 1;
                 best_score = score;
             }
+            LOG("After checking")
         }
 
         if (validateMove(board, row, col, row + 1, col - 1))
         {
+            LOG("checking 2")
             temp_board = getBoardCopy(board);
             move(temp_board, row, col, row + 1, col - 1);
             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -215,10 +233,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 ai_move->to_col = col - 1;
                 best_score = score;
             }
+            LOG("After checking")
         }
 
         if (validateMove(board, row, col, row + 2, col + 2))
         {
+            LOG("checking 3")
             temp_board = getBoardCopy(board);
             move(temp_board, row, col, row + 2, col + 2);
             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -254,17 +274,19 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     best_score += 100; 
                     ai_move->score+=100;
                 }
-                //for (int i = 0; i < 64; i++)
-                //{
-                //    if (temp_board[i] != nullptr)
-                //        delete temp_board[i];
-                //}
-                //delete[] temp_board;
+                for (int i = 0; i < 64; i++)
+                {
+                    if (temp_board[i] != nullptr)
+                        delete temp_board[i];
+                }
+                delete[] temp_board;
             }
+            LOG("After checking")
         }
 
         if (validateMove(board, row, col, row + 2, col - 2))
         {
+            LOG("checking 4")
             temp_board = getBoardCopy(board);
             move(temp_board, row, col, row + 2, col - 2);
             int score =findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -300,14 +322,14 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     best_score += 100; 
                     ai_move->score+=100;
                 }
-                //for (int i = 0; i < 64; i++)
-                //{
-                //    if (temp_board[i] != nullptr)
-                //        delete temp_board[i];
-                //}
-                //delete[] temp_board;
-                std::cout << "new best move to beat: " << best_score << std::endl;
+                for (int i = 0; i < 64; i++)
+                {
+                    if (temp_board[i] != nullptr)
+                        delete temp_board[i];
+                }
+                delete[] temp_board;
             }
+            LOG("After checking")
         }
 
         //if the token is a king, check moves that move backward
@@ -315,6 +337,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
         {
             if (validateMove(board, row, col, row - 1, col + 1))
             {
+                LOG("checking 5")
                 LOG("king move backward right")
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 1, col + 1);
@@ -338,21 +361,23 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     ai_move->to_col = col + 1;
                     best_score = score;
                 }
+                LOG("After checking")
             }
 
             if (validateMove(board, row, col, row - 1, col - 1))
             {
+                LOG("checking 6")
                 LOG("king move backward left")
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 1, col - 1);
                 int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
-                //for (int i = 0; i < 64; i++)
+                for (int i = 0; i < 64; i++)
                 //{
                 //    if (temp_board[i] != nullptr)
                 //        delete temp_board[i];
                 //}
                 //delete[] temp_board;
-                if (score >= best_score)
+                //if (score >= best_score)
                 {
                     if (ai_move == nullptr)
                     {
@@ -365,10 +390,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     ai_move->to_col = col - 1;
                     best_score = score;
                 }
+                LOG("After checking")
             }
 
             if (validateMove(board, row, col, row - 2, col + 2))
             {
+                LOG("checking 7")
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 2, col + 2);
                 int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -416,17 +443,19 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         best_score += 100; 
                         ai_move->score+=100;
                     }
-                    //for (int i = 0; i < 64; i++)
-                    //{
-                    //    if (temp_board[i] != nullptr)
-                    //        delete temp_board[i];
-                    //}
-                    //delete[] temp_board;
+                    for (int i = 0; i < 64; i++)
+                    {
+                        if (temp_board[i] != nullptr)
+                            delete temp_board[i];
+                    }
+                    delete[] temp_board;
                 }
+                LOG("After checking")
             }
 
             if (validateMove(board, row, col, row - 2, col - 2))
             {
+                LOG("checking 8")
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 2, col - 2);
                 int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -475,13 +504,14 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         best_score += 100; 
                         ai_move->score+=100;
                     }
-                    //for (int i = 0; i < 64; i++)
-                    //{
-                    //    if (temp_board[i] != nullptr)
-                    //        delete temp_board[i];
-                    //}
-                    //delete[] temp_board;
+                    for (int i = 0; i < 64; i++)
+                    {
+                        if (temp_board[i] != nullptr)
+                            delete temp_board[i];
+                    }
+                    delete[] temp_board;
                 }
+                LOG("After checking")
             }
         }
 
@@ -502,18 +532,24 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
         //        delete board[i];
         //}
         //delete[] board;
+
+        return 0;
     }
 
     //this is the last level of the tree, just return the score
-    if (depth == 1)
+    if (depth == 0)
     {
-        return getScore(board);
+        int score = getScore(board);
+
+        //for (int i = 0; i < 64; i++)
+        //{
+        //    if (board[i] != nullptr)
+        //        delete board[i];
+        //}
+        //delete[] board;
+
+        return score;
     }
-
-
-
-
-
 
 
 
@@ -545,6 +581,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
 
                     if (validateMove(board, row, col, row + 1, col + 1))
                     {
+                        LOG("checking 9")
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row + 1, col + 1);
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -560,19 +597,14 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         {
                             best_score = score;
                         }
+                        LOG("After checking")
                     }
 
                     if (validateMove(board, row, col, row + 1, col - 1))
                     {
+                        LOG("checking 10")
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row + 1, col - 1);
-
-            //for (int i = 0; i < 64; i++)
-            //{
-            //    if (temp_board[i] != nullptr)
-            //        delete temp_board[i];
-            //}
-            //delete[] temp_board;
             
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
 
@@ -587,10 +619,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         {
                             best_score = score;
                         }
+                        LOG("After checking")
                     }
 
                     if (validateMove(board, row, col, row + 2, col + 2))
                     {
+                        LOG("checking 11")
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row + 2, col + 2);
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -620,17 +654,19 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                 best_score += 100; 
                             }
 
-                            //for (int i = 0; i < 64; i++)
-                            //{
-                            //    if (temp_board[i] != nullptr)
-                            //        delete temp_board[i];
-                            //}
-                            //delete[] temp_board;
+                            for (int i = 0; i < 64; i++)
+                            {
+                                if (temp_board[i] != nullptr)
+                                    delete temp_board[i];
+                            }
+                            delete[] temp_board;
                         }
+                        LOG("After checking")
                     }
 
                     if (validateMove(board, row, col, row + 2, col - 2))
                     {
+                        LOG("checking 12")
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row + 2, col - 2);
                         int score =findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -660,13 +696,14 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                 best_score += 100; 
                             }
 
-                            //for (int i = 0; i < 64; i++)
-                            //{
-                            //    if (temp_board[i] != nullptr)
-                            //        delete temp_board[i];
-                            //}
-                            //delete[] temp_board;
+                            for (int i = 0; i < 64; i++)
+                            {
+                                if (temp_board[i] != nullptr)
+                                    delete temp_board[i];
+                            }
+                            delete[] temp_board;
                         }
+                        LOG("After checking")
                     }
 
                     //if the token is a king, check moves that move backward
@@ -674,6 +711,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     {
                         if (validateMove(board, row, col, row - 1, col + 1))
                         {
+                            LOG("checking 13")
                             LOG("king move backward right")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row - 1, col + 1);
@@ -690,10 +728,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             {
                                 best_score = score;
                             }
+                            LOG("After checking")
                         }
 
                         if (validateMove(board, row, col, row - 1, col - 1))
                         {
+                            LOG("checking ")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row - 1, col - 1);
                             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -709,10 +749,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             {
                                 best_score = score;
                             }
+                            LOG("After checking")
                         }
 
                         if (validateMove(board, row, col, row - 2, col + 2))
                         {
+                            LOG("checking 14")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row - 2, col + 2);
                             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -753,17 +795,19 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                     best_score += 100;
                                 }
 
-                                //for (int i = 0; i < 64; i++)
-                                //{
-                                //    if (temp_board[i] != nullptr)
-                                //        delete temp_board[i];
-                                //}
-                                //delete[] temp_board;
+                                for (int i = 0; i < 64; i++)
+                                {
+                                    if (temp_board[i] != nullptr)
+                                        delete temp_board[i];
+                                }
+                                delete[] temp_board;
                             }
+                            LOG("After checking")
                         }
 
                         if (validateMove(board, row, col, row - 2, col - 2))
                         {
+                            LOG("checking 15")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row - 2, col - 2);
                             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -804,18 +848,26 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                     best_score += 100;
                                 }
 
-                                //for (int i = 0; i < 64; i++)
-                                //{
-                                //    if (temp_board[i] != nullptr)
-                                //        delete temp_board[i];
-                                //}
-                                //delete[] temp_board;
+                                for (int i = 0; i < 64; i++)
+                                {
+                                    if (temp_board[i] != nullptr)
+                                        delete temp_board[i];
+                                }
+                                delete[] temp_board;
                             }
+                            LOG("After checking")
                         }
                     }
                 }
             }
         }
+
+        //for (int i = 0; i < 64; i++)
+        //{
+        //    if (board[i] != nullptr)
+        //        delete board[i];
+        //}
+        //delete[] board;
 
         if (best_score == -9999)
             return 9999;
@@ -878,6 +930,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
 
                     if (validateMove(board, row, col, row - 1, col + 1))
                     {
+                        LOG("checking 16")
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row - 1, col + 1);
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -894,10 +947,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         {
                             best_score = score;
                         }
+                        LOG("After checking")
                     }
 
                     if (validateMove(board, row, col, row - 1, col - 1))
                     {
+                        LOG("checking 17")
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row + 1, col - 1);
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -913,10 +968,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         {
                             best_score = score;
                         }
+                        LOG("After checking")
                     }
 
                     if (validateMove(board, row, col, row - 2, col + 2))
                     {
+                        LOG("checking 18")
                         Token** temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row - 2, col + 2);
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -939,26 +996,28 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
                             {
                                 std::cout << "double jump found\n";
-                                best_score += 100; 
+                                best_score -= 100; 
                             }
                             if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
                             {
                                 std::cout << "double jump found\n";
-                                best_score += 100; 
+                                best_score -= 100; 
                             }
 
-                            //for (int i = 0; i < 64; i++)
-                            //{
-                            //    if (temp_board[i] != nullptr)
-                            //        delete temp_board[i];
-                            //}
-                            //delete[] temp_board;
+                            for (int i = 0; i < 64; i++)
+                            {
+                                if (temp_board[i] != nullptr)
+                                    delete temp_board[i];
+                            }
+                            delete[] temp_board;
             
                         }
+                        LOG("After checking")
                     }
 
                     if (validateMove(board, row, col, row - 2, col - 2))
                     {
+                        LOG("checking 19")
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row + 2, col - 2);
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -980,21 +1039,22 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
                             {
                                 std::cout << "double jump found\n";
-                                best_score += 100; 
+                                best_score -= 100; 
                             }
                             if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
                             {
                                 std::cout << "double jump found\n";
-                                best_score += 100; 
+                                best_score -= 100; 
                             }
 
-                            //for (int i = 0; i < 64; i++)
-                            //{
-                            //    if (temp_board[i] != nullptr)
-                            //        delete temp_board[i];
-                            //}
-                            //delete[] temp_board;
+                            for (int i = 0; i < 64; i++)
+                            {
+                                if (temp_board[i] != nullptr)
+                                    delete temp_board[i];
+                            }
+                            delete[] temp_board;
                         }
+                        LOG("After checking")
                     }
 
                     //if the token is a king, check moves that move backward
@@ -1002,6 +1062,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     {
                         if (validateMove(board, row, col, row + 1, col + 1))
                         {
+                            LOG("checking 20")
                             LOG("king move backward right")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 1, col + 1);
@@ -1018,10 +1079,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             {
                                 best_score = score;
                             }
+                            LOG("After checking")
                         }
 
                         if (validateMove(board, row, col, row + 1, col - 1))
                         {
+                            LOG("checking ")
                             LOG("king move backward left")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 1, col - 1);
@@ -1038,10 +1101,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             {
                                 best_score = score;
                             }
+                            LOG("After checking")
                         }
 
                         if (validateMove(board, row, col, row + 2, col + 2))
                         {
+                            LOG("checking 21")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 2, col + 2);
                             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -1082,17 +1147,19 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                     best_score += 100;
                                 }
 
-                                //for (int i = 0; i < 64; i++)
-                                //{
-                                //    if (temp_board[i] != nullptr)
-                                //        delete temp_board[i];
-                                //}
-                                //delete[] temp_board;
+                                for (int i = 0; i < 64; i++)
+                                {
+                                    if (temp_board[i] != nullptr)
+                                        delete temp_board[i];
+                                }
+                                delete[] temp_board;
                             }
+                            LOG("After checking")
                         }
 
                         if (validateMove(board, row, col, row + 2, col - 2))
                         {
+                            LOG("checking ")
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 2, col - 2);
                             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
@@ -1130,28 +1197,37 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                     if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col - 2))
                                 {
                                     std::cout << "double jump found\n";
-                                    best_score += 100;
+                                    best_score -= 100;
                                 }
 
-                                //for (int i = 0; i < 64; i++)
-                                //{
-                                //    if (temp_board[i] != nullptr)
-                                //        delete temp_board[i];
-                                //}
-                                //delete[] temp_board;
+                                for (int i = 0; i < 64; i++)
+                                {
+                                    if (temp_board[i] != nullptr)
+                                        delete temp_board[i];
+                                }
+                                delete[] temp_board;
             
                             }
+                            LOG("After checking")
                         }
                     }
                 }
             }
         }
 
+        //for (int i = 0; i < 64; i++)
+        //{
+        //    if (board[i] != nullptr)
+        //        delete board[i];
+        //}
+        //delete[] board;
+
         if (best_score == 9999)
             return -9999;
         else
             return best_score;
     }
+    return -9999;
 }
 
 //*****************************************************GET SCORE*****************************************************
@@ -1326,13 +1402,8 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
 
 
 
-//P)(*&)(*&)(*&)(*&)(*&)(*&)(*&*&^(*&^)(&)*(^&*(^&&*&*))) MAY HAVE MEMORY LEAK__________DELETE OBJECTS WHEN JUMP MOVE IS MADE
-//***********IF SECOND JUMP POSSIBLE JUST MAKE IT... I THINK, MAKE SURE THAT WOULD WORK WITH RETURNED MOVE
-
 void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int to_col)
 {
-    //if (validateMove(from_row, from_col, to_row, to_col))
-   // {
         Token* token = board[from_row * 8 + from_col];
         token->setRow(to_row);
         token->setCol(to_col);
@@ -1372,12 +1443,13 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         {
                             if (jumped->getPlayer() == AI)
                             {
+                                delete board[(to_row + 1) * 8 + (to_col - 1)];
                                 board[(to_row + 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
+                            std::cout << "ERROR1: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
 
                         }
@@ -1390,12 +1462,13 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         {
                             if (jumped->getPlayer() == AI)
                             {
+                                delete board[(to_row - 1) * 8 + (to_col - 1)];
                                 board[(to_row - 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
+                            std::cout << "ERROR2: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
                         }
                     }
@@ -1412,12 +1485,13 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         {
                             if (jumped->getPlayer() == PLAYER)
                             {
+                                delete board[(to_row - 1) * 8 + (to_col - 1)];
                                 board[(to_row - 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made,  validateMove function should not allow this...\n";
+                            std::cout << "ERROR3: Invalid move made,  validateMove function should not allow this...\n";
                             //throw -1;
                         }
                     }
@@ -1430,12 +1504,13 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         {
                             if (jumped->getPlayer() == PLAYER)
                             {
+                                delete board[(to_row + 1) * 8 + (to_col - 1)];
                                 board[(to_row + 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
+                            std::cout << "ERROR4: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
                         }
                     }
@@ -1456,12 +1531,13 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         {
                             if (jumped->getPlayer() == AI)
                             {
+                                delete board[(to_row + 1) * 8 + (to_col + 1)];
                                 board[(to_row + 1) * 8 + (to_col + 1)] = nullptr;
                             }
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
+                            std::cout << "ERROR5: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
 
                         }
@@ -1474,12 +1550,13 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         {
                             if (jumped->getPlayer() == AI)
                             {
+                                delete board[(to_row - 1) * 8 + (to_col + 1)];
                                 board[(to_row - 1) * 8 + (to_col + 1)] = nullptr;
                             }
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
+                            std::cout << "ERROR6: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
                         }
                     }
@@ -1494,11 +1571,12 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         jumped = board[(to_row - 1) * 8 + (to_col + 1)];
                         if (jumped != nullptr && jumped->getPlayer() == PLAYER)
                         {
+                            delete board[(to_row - 1) * 8 + (to_col + 1)];
                             board[(to_row - 1) * 8 + (to_col + 1)] = nullptr;
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made,  validateMove function should not allow this...\n";
+                            std::cout << "ERROR7: Invalid move made,  validateMove function should not allow this...\n";
                             //throw -1;
                         }
                     }
@@ -1509,11 +1587,12 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                         jumped = board[(to_row + 1) * 8 + (to_col + 1)];
                         if (jumped != nullptr && jumped->getPlayer() == PLAYER)
                         {
+                            delete board[(to_row + 1) * 8 + (to_col + 1)];
                             board[(to_row + 1) * 8 + (to_col + 1)] = nullptr;
                         }
                         else 
                         {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
+                            std::cout << "ERROR8: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
                         }
                     }
@@ -1532,149 +1611,5 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
             token->setKing();
             //return true;
         }
-/*
-        //check for additional jumps, all available jumps must be made before the turn ends
-        if (jump_move)
-        {
-            int row = to_row;
-            int col = to_col;
 
-            if (token->getPlayer() == PLAYER)
-            {
-                if (row - 2 >= 0)
-                {
-                    //check for a jump to the left
-                    if (col - 2 >= 0)
-                    {
-                        if (!getTile(row - 2, col - 2)->isTokenPresent() && getTile(row - 1, col - 1)->isTokenPresent())
-                        {
-                            if (getTile(row - 1, col - 1)->getToken()->getPlayer() == AI)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token the left\n";
-                                return false;
-                            }
-                        }
-                    }
-                    //check for a jump to the right
-                    if (col + 2 <= 7)
-                    {
-                        if (!getTile(row - 2, col + 2)->isTokenPresent() && getTile(row - 1, col + 1)->isTokenPresent())
-                        {
-                            if (getTile(row - 1, col + 1)->getToken()->getPlayer() == AI)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token on the right\n";
-                                return false;
-                            }
-                        }
-                    }
-                }
-            
-                //check for backward jumps
-                if (token->isKing())
-                {
-                    if (row + 2 <= 7)
-                    {
-                        //check for a jump to the back left
-                        if (col - 2 >= 0)
-                        {
-                            if (!getTile(row + 2, col - 2)->isTokenPresent() && getTile(row + 1, col - 1)->isTokenPresent())
-                            {
-                                if (getTile(row + 1, col - 1)->getToken()->getPlayer() == AI)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token to the back left\n";
-                                    return false;
-                                }
-                            }
-                        }
-
-                        //check for a jump to the right
-                        if (col + 2 <= 7)
-                        {
-                            if (!getTile(row + 2, col + 2)->isTokenPresent() && getTile(row + 1, col + 1)->isTokenPresent())
-                            {
-                                if (getTile(row + 1, col + 1)->getToken()->getPlayer() == AI)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token on to the back right\n";
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            //if AI's move, check for possible jumps before turn ends
-            if (token->getPlayer() == AI)
-            {
-                //check for jumps forward (regular token or king)
-                if (row + 2 <= 7)
-                {
-                    //check for a jump to the left
-                    if (col - 2 >= 0)
-                    {
-                        if (!getTile(row + 2, col - 2)->isTokenPresent() && getTile(row + 1, col - 1)->isTokenPresent())
-                        {
-                            if (getTile(row + 1, col - 1)->getToken()->getPlayer() == PLAYER)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token the left\n";
-                                return false;
-                            }
-                        }
-                    }
-                    //check for a jump to the right
-                    if (col + 2 <= 7)
-                    {
-                        if (!getTile(row + 2, col + 2)->isTokenPresent() && getTile(row + 1, col + 1)->isTokenPresent())
-                        {
-                            if (getTile(row + 1, col + 1)->getToken()->getPlayer() == PLAYER)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token on the right\n";
-                                return false;
-                            }
-                        }
-                    }
-                }
-            
-                //check for backward jumps (king only)
-                if (token->isKing())
-                {
-                    if (row - 2 >= 0)
-                    {
-                        //check for a jump to the back left
-                        if (col - 2 >= 0)
-                        {
-                            if (!getTile(row - 2, col - 2)->isTokenPresent() && getTile(row - 1, col - 1)->isTokenPresent())
-                            {
-                                if (getTile(row - 1, col - 1)->getToken()->getPlayer() == PLAYER)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token to the back left\n";
-                                    return false;
-                                }
-                            }
-                        }
-
-                        //check for a jump to the right
-                        if (col + 2 <= 7)
-                        {
-                            if (!getTile(row - 2, col + 2)->isTokenPresent() && getTile(row - 1, col + 1)->isTokenPresent())
-                            {
-                                if (getTile(row - 1, col + 1)->getToken()->getPlayer() == PLAYER)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token on to the back right\n";
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        return false;
-    }
-
-    SWITCH_TURN(current_player);
-    return true;
-    */
 }
