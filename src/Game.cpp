@@ -1,13 +1,11 @@
 #include "Game.h"
 #include <math.h>
 
-//#define SWITCH_TURN(current) if (current == PLAYER) this->current_player = AI; else this->current_player = PLAYER;
 #define SWITCH_TURN(current) current_player = current_player ? PLAYER : AI;
 #define LOG(x) std::cout << x << std::endl;
 
-Game::Game(Board* board, wxFrame* window)
+Game::Game(Board* board)
 {
-    this->window = window;
     player_tokens = new Tokens(12, PLAYER);  
     ai_tokens = new Tokens(12, AI);  
     current_player = PLAYER;
@@ -55,7 +53,8 @@ Tokens* Game::getPlayerTokens()
 {
     return player_tokens;
 }
-//***************************************************************************
+
+
 void Game::start()
 {
     //current_player = PLAYER;
@@ -66,7 +65,6 @@ void Game::start()
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
         //ai->get_move();
-        //window->Refresh();
     }   
     //std::terminate();
 }
@@ -84,20 +82,9 @@ void Game::check_end_game()
         current_player = NONE;
     }
 }
-//**************
-//remove reference to window if not using SetStatusText()
+
 void Game::reportClick(BoardTile* tile)
 {
-    //std:: cout << "Player Tokens: " << num_player_tokens << std::endl << "AI Tokens: " << num_ai_tokens << std::endl;
-    //std::cout << "row: " << tile->getRow() << " Col: " << tile->getCol() << std::endl;
-    /*for (int i = 0; i < 8; i++)
-    {
-        for ( int j = 0; j < 8; j++)
-        {
-            BoardTile* tile = board->getTile(i, j);
-            std::cout << "Row: " << tile->getRow() << " " << "Col: " << tile->getCol() << std::endl;
-        }
-    }*/
     if (current_player == PLAYER)
     {
         //no tiles are selected and the current player has a piece on the selected tile
@@ -262,21 +249,6 @@ bool Game::validateMove(int from_row, int from_col, int to_row, int to_col)
     return false;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool Game::move(BoardTile* from, BoardTile* to)
 {
     int from_row = from->getRow();
@@ -294,12 +266,12 @@ bool Game::move(BoardTile* from, BoardTile* to)
         selected = nullptr;
         is_a_tile_selected = false;
         bool jump_move = false;
-        //from->paintNow();
+
         from->Refresh();
         from->Update();
-        //to->paintNow();
         to->Refresh();
         to->Update();
+
         //a jump was made
         if (abs(to_row - from_row) == 2)
         {  
@@ -459,21 +431,17 @@ bool Game::move(BoardTile* from, BoardTile* to)
             }
 
         }
-        //from->paintNow();
-        //to->paintNow();
         
         //if a token made it to the end, change it to a king and end the turn
         if (to_row == 0 && token->getPlayer() == PLAYER && !token->isKing())
         {
             token->setKing();
-            std::cout << "King me.. turn over\n";
             SWITCH_TURN(current_player);
             return true;
         }
         if (to_row == 7 && token->getPlayer() == AI && !token->isKing())
         {
             token->setKing();
-            std::cout << "King me.. turn over\n";
             SWITCH_TURN(current_player);
             return true;
         }
@@ -495,7 +463,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                         {
                             if (getTile(row - 1, col - 1)->getToken()->getPlayer() == AI)
                             {
-                                std::cout << "JUMP available to PLAYER regular token the left\n";
                                 return false;
                             }
                         }
@@ -507,7 +474,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                         {
                             if (getTile(row - 1, col + 1)->getToken()->getPlayer() == AI)
                             {
-                                std::cout << "JUMP available to PLAYER regular token on the right\n";
                                 return false;
                             }
                         }
@@ -526,8 +492,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                             {
                                 if (getTile(row + 1, col - 1)->getToken()->getPlayer() == AI)
                                 {
-                                    std::cout << "JUMP available to PLAYER king token to the back left\n";
-
                                     return false;
                                 }
                             }
@@ -540,7 +504,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                             {
                                 if (getTile(row + 1, col + 1)->getToken()->getPlayer() == AI)
                                 {
-                                    std::cout << "JUMP available to PLAYER king token on to the back right\n";
                                     return false;
                                 }
                             }
@@ -561,7 +524,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                         {
                             if (getTile(row + 1, col - 1)->getToken()->getPlayer() == PLAYER)
                             {
-                                std::cout << "JUMP available to PLAYER regular token the left\n";
                                 token = getTile(row, col)->getToken();
                                 token->setRow(row + 2);
                                 token->setCol(col - 2);
@@ -592,7 +554,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                         {
                             if (getTile(row + 1, col + 1)->getToken()->getPlayer() == PLAYER)
                             {
-                                std::cout << "JUMP available to PLAYER regular token on the right\n";
                                 
                                 token = getTile(row, col)->getToken();
                                 token->setRow(row + 2);
@@ -631,7 +592,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                             {
                                 if (getTile(row - 1, col - 1)->getToken()->getPlayer() == PLAYER)
                                 {
-                                    std::cout << "JUMP available to PLAYER king token to the back left\n";
                                     token = getTile(row, col)->getToken();
                                     token->setRow(row - 2);
                                     token->setCol(col - 2);
@@ -663,7 +623,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
                             {
                                 if (getTile(row - 1, col + 1)->getToken()->getPlayer() == PLAYER)
                                 {
-                                    std::cout << "JUMP available to PLAYER king token on to the back right\n";
                                     token = getTile(row, col)->getToken();
                                     token->setRow(row - 2);
                                     token->setCol(col + 2);
@@ -700,365 +659,6 @@ bool Game::move(BoardTile* from, BoardTile* to)
     SWITCH_TURN(current_player);
     return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*bool Game::move(BoardTile* from, BoardTile* to)
-{
-    if (validateMove(from->getRow(), from->getCol(), to->getRow(), to->getCol()))
-    {
-        Token* token = from->getToken();
-        from->removeToken();
-        to->setToken(token);
-        selected = nullptr;
-        is_a_tile_selected = false;
-        bool jump_move = false;
-        
-        //a jump was made
-        if (abs(to->getRow() - from->getRow()) == 2)
-        {  
-            jump_move = true;
-            BoardTile* jumped;
-            //the jump was toward the right side of the board
-            if (to->getCol() > from->getCol())
-            {
-                //jump was made the player
-                if (token->getPlayer() == PLAYER)
-                {
-                    //case where token jumps forward
-                    if (to->getRow() < from->getRow())
-                    {
-                        jumped = getTile(to->getRow() + 1, to->getCol() - 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == AI)
-                        {
-                            jumped->removeToken();
-                            num_ai_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
-                            //throw -1;
-
-                        }
-                    }
-                    //case where jump is made backward, the token must be a king to do this
-                    else if (to->getRow() > from->getRow() && token->isKing())
-                    {
-                        jumped = getTile(to->getRow() - 1, to->getCol() - 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == AI)
-                        {
-                            jumped->removeToken();
-                            num_ai_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
-                            //throw -1;
-                        }
-                    }
-
-                }
-                //jump was made by the AI
-                else if (token->getPlayer() == AI)
-                {
-                    //case where token jumps forward
-                    if (to->getRow() > from->getRow())
-                    {
-                        jumped = getTile(to->getRow() - 1, to->getCol() - 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == PLAYER)
-                        {
-                            jumped->removeToken();
-                            num_player_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made,  validateMove function should not allow this...\n";
-                            //throw -1;
-                        }
-                    }
-                    //case where jump is made backward, the token must be a king to do this
-                    else if (to->getRow() < from->getRow() && token->isKing())
-                    {
-
-                        jumped = getTile(to->getRow() + 1, to->getCol() - 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == PLAYER)
-                        {
-                            jumped->removeToken();
-                            num_player_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
-                            //throw -1;
-                        }
-                    }
-                }
-            }
-
-            //the jump was made toward the left side of the board
-            if (to->getCol() < from->getCol())
-            {
-                //jump was made the player
-                if (token->getPlayer() == PLAYER)
-                {
-                    //case where token jumps forward
-                    if (to->getRow() < from->getRow())
-                    {
-                        jumped = getTile(to->getRow() + 1, to->getCol() + 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == AI)
-                        {
-                            jumped->removeToken();
-                            num_ai_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
-                            //throw -1;
-
-                        }
-                    }
-                    //case where jump is made backward, the token must be a king to do this
-                    else if (to->getRow() > from->getRow() && token->isKing())
-                    {
-                        jumped = getTile(to->getRow() - 1, to->getCol() + 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == AI)
-                        {
-                            jumped->removeToken();
-                            num_ai_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
-                            //throw -1;
-                        }
-                    }
-
-                }
-                //jump was made by the AI
-                else if (token->getPlayer() == AI)
-                {
-                    //case where token jumps forward
-                    if (to->getRow() > from->getRow())
-                    {
-                        jumped = getTile(to->getRow() - 1, to->getCol() + 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == PLAYER)
-                        {
-                            jumped->removeToken();
-                            num_player_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made,  validateMove function should not allow this...\n";
-                            //throw -1;
-                        }
-                    }
-                    //case where jump is made backward, the token must be a king to do this
-                    else if (to->getRow() < from->getRow() && token->isKing())
-                    {
-
-                        jumped = getTile(to->getRow() + 1, to->getCol() + 1);
-                        if (jumped->isTokenPresent() && jumped->getToken()->getPlayer() == PLAYER)
-                        {
-                            jumped->removeToken();
-                            num_player_tokens--;
-                        }
-                        else 
-                        {
-                            std::cout << "ERROR: Invalid move made, validateMove function should not allow this...\n";
-                            //throw -1;
-                        }
-                    }
-                }  
-            }
-
-        }
-        
-        //if a token made it to the end, change it to a king and end the turn
-        if (to->getRow() == 0 && token->getPlayer() == PLAYER && !token->isKing())
-        {
-            token->setKing();
-            std::cout << "King me.. turn over\n";
-            SWITCH_TURN(current_player);
-            return true;
-        }
-        if (to->getRow() == 7 && token->getPlayer() == AI && !token->isKing())
-        {
-            token->setKing();
-            std::cout << "King me.. turn over\n";
-            SWITCH_TURN(current_player);
-            return true;
-        }
-
-        //check for additional jumps, all available jumps must be made before the turn ends
-        if (jump_move)
-        {
-            int row = to->getRow();
-            int col = to->getCol();
-
-            if (token->getPlayer() == PLAYER)
-            {
-                if (row - 2 >= 0)
-                {
-                    //check for a jump to the left
-                    if (col - 2 >= 0)
-                    {
-                        if (!getTile(row - 2, col - 2)->isTokenPresent() && getTile(row - 1, col - 1)->isTokenPresent())
-                        {
-                            if (getTile(row - 1, col - 1)->getToken()->getPlayer() == AI)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token the left\n";
-                                return false;
-                            }
-                        }
-                    }
-                    //check for a jump to the right
-                    if (col + 2 <= 7)
-                    {
-                        if (!getTile(row - 2, col + 2)->isTokenPresent() && getTile(row - 1, col + 1)->isTokenPresent())
-                        {
-                            if (getTile(row - 1, col + 1)->getToken()->getPlayer() == AI)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token on the right\n";
-                                return false;
-                            }
-                        }
-                    }
-                }
-            
-                //check for backward jumps
-                if (token->isKing())
-                {
-                    if (row + 2 <= 7)
-                    {
-                        //check for a jump to the back left
-                        if (col - 2 >= 0)
-                        {
-                            if (!getTile(row + 2, col - 2)->isTokenPresent() && getTile(row + 1, col - 1)->isTokenPresent())
-                            {
-                                if (getTile(row + 1, col - 1)->getToken()->getPlayer() == AI)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token to the back left\n";
-                                    return false;
-                                }
-                            }
-                        }
-
-                        //check for a jump to the right
-                        if (col + 2 <= 7)
-                        {
-                            if (!getTile(row + 2, col + 2)->isTokenPresent() && getTile(row + 1, col + 1)->isTokenPresent())
-                            {
-                                if (getTile(row + 1, col + 1)->getToken()->getPlayer() == AI)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token on to the back right\n";
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            //if AI's move, check for possible jumps before turn ends
-            if (token->getPlayer() == AI)
-            {
-                //check for jumps forward (regular token or king)
-                if (row + 2 <= 7)
-                {
-                    //check for a jump to the left
-                    if (col - 2 >= 0)
-                    {
-                        if (!getTile(row + 2, col - 2)->isTokenPresent() && getTile(row + 1, col - 1)->isTokenPresent())
-                        {
-                            if (getTile(row + 1, col - 1)->getToken()->getPlayer() == PLAYER)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token the left\n";
-                                return false;
-                            }
-                        }
-                    }
-                    //check for a jump to the right
-                    if (col + 2 <= 7)
-                    {
-                        if (!getTile(row + 2, col + 2)->isTokenPresent() && getTile(row + 1, col + 1)->isTokenPresent())
-                        {
-                            if (getTile(row + 1, col + 1)->getToken()->getPlayer() == PLAYER)
-                            {
-                                std::cout << "JUMP available to PLAYER regular token on the right\n";
-                                return false;
-                            }
-                        }
-                    }
-                }
-            
-                //check for backward jumps (king only)
-                if (token->isKing())
-                {
-                    if (row - 2 >= 0)
-                    {
-                        //check for a jump to the back left
-                        if (col - 2 >= 0)
-                        {
-                            if (!getTile(row - 2, col - 2)->isTokenPresent() && getTile(row - 1, col - 1)->isTokenPresent())
-                            {
-                                if (getTile(row - 1, col - 1)->getToken()->getPlayer() == PLAYER)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token to the back left\n";
-                                    return false;
-                                }
-                            }
-                        }
-
-                        //check for a jump to the right
-                        if (col + 2 <= 7)
-                        {
-                            if (!getTile(row - 2, col + 2)->isTokenPresent() && getTile(row - 1, col + 1)->isTokenPresent())
-                            {
-                                if (getTile(row - 1, col + 1)->getToken()->getPlayer() == PLAYER)
-                                {
-                                    std::cout << "JUMP available to PLAYER king token on to the back right\n";
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        return false;
-    }
-    
-    SWITCH_TURN(current_player);
-    return true;
-}*/
 
 BoardTile* Game::getTile(int row, int col)
 {

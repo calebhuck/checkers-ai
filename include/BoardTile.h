@@ -32,10 +32,10 @@ class BoardTile: public wxPanel
         DECLARE_EVENT_TABLE();
 
     private:
-        wxIcon red_token;
-        wxIcon red_king;
-        wxIcon white_token;
-        wxIcon white_king;
+        static wxIcon red_token;
+        static wxIcon red_king;
+        static wxIcon white_token;
+        static wxIcon white_king;
         bool selected;
         bool token_present;
         Token* token;

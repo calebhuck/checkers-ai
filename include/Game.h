@@ -4,20 +4,21 @@
 #include <chrono>
 #include <thread>
 #include "Tokens.h"
+
 class MiniMaxAI;
 #include "MiniMaxAI.h"
 class cMain;
 #include "cMain.h"
 class Board;
 #include "Board.h"
-//fixes mutual inclusion problem TRY REMOVING***********************
+
 class BoardTile;
 #include "BoardTile.h"
 
 class Game
 {
     public:
-        Game(Board* board, wxFrame* window);
+        Game(Board* board);
         ~Game();
         void reportClick(BoardTile* tile);
         BoardTile* getTile(int row, int col);

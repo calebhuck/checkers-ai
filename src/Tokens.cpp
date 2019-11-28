@@ -21,10 +21,7 @@ void Tokens::add(Token* token)
     num_tokens++;
 }
 void Tokens::remove(Token* token)
-{   
-    //std::cout << "REMOVE CALLED\n";
-    if (token->getPlayer() != this->player)
-        std::cout << "TOKENS TRIED TO REMOVE PLAYER FROM WRONG OBJECT.... CHECK TOKENS::REMOVETOKEN\n\n";
+{
     tokens[token->getID()] = nullptr;
     num_tokens--;
 }
@@ -39,7 +36,6 @@ Token* Tokens::getToken(int id)
         return tokens[id];
     else
     {
-        std::cout << "TRIED TO ACCESS TOKEN OUTT OF BOUNDS... TOKENS getToken\n";
         return nullptr;
     }
 }

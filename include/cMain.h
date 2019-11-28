@@ -4,21 +4,23 @@
 class Board;
 #include "Board.h"
 #include <wx/wx.h>
+
 class Game;
 #include "Game.h"
-//class BoardTile;
-//#include "BoardTile.h"
 
-class cMain: public wxFrame
+class cMain: public wxFrame//, private wxTimer
 {
 public:
     cMain();
     ~cMain();
+    //void updateTiles(wxTimerEvent& evt);
+    //virtual void Notify();
 
 private:
-    //BoardTile** board;
     Board* board;
     Game* game;
+    //wxTimer update_timer;
+    //DECLARE_EVENT_TABLE();
 };
 enum
 {
