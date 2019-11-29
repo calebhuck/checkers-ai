@@ -1,6 +1,7 @@
 #include "MiniMaxAI.h"
 #include <wx/wx.h>
 #include <fstream>
+#include <iomanip>
 
 #define LOG(x) std::cout << x << std::endl;
 #define DEPTH 5
