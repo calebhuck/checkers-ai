@@ -1,10 +1,10 @@
 #include "BoardTile.h"
-//#include "./img/token_red_king.xpm"
+#include "./img/token_red_king.xpm"
 
 BoardTile::BoardTile(Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
 {
     //red_token = wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170);
-    //red_king = wxIcon("./img/token_red_king.png", wxBITMAP_TYPE_PNG, 170, 170);
+    red_king = wxIcon(wxICON(token_red_king)/*, wxBITMAP_TYPE_PNG, 170, 170*/);
     //white_token = wxIcon("./img/token_white.png", wxBITMAP_TYPE_PNG, 170, 170);
     //white_king = wxIcon("./img/token_white_king.png", wxBITMAP_TYPE_PNG, 170, 170);
     this->game = game;
@@ -82,7 +82,6 @@ void BoardTile::render(wxDC&  dc)
 void BoardTile::onClick(wxMouseEvent& event)
 {    
     game->reportClick(this);
-    //this->paintNow();
     event.Skip();
 }
 
