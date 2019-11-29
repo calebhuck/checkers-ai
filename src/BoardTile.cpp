@@ -1,4 +1,5 @@
 #include "BoardTile.h"
+//#include "./img/token_red_king.xpm"
 
 BoardTile::BoardTile(Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
 {
@@ -56,7 +57,7 @@ void BoardTile::render(wxDC&  dc)
         {
             if (!token->isKing())
             {
-                dc.DrawIcon(/*this->red_token*/wxIcon("./img/token_red.png", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
+                dc.DrawIcon(/*this->red_token*/wxIcon("./img/token_red.PNG", wxBITMAP_TYPE_PNG, 170, 170), wxPoint(0, 0));
             }
             else
             {                

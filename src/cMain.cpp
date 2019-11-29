@@ -4,6 +4,7 @@
 cMain::cMain() : wxFrame(nullptr, wxID_ANY, "Checkers App", wxPoint(0, 19), wxSize(800, 800),wxDEFAULT_FRAME_STYLE & ~(wxRESIZE_BORDER | wxMAXIMIZE_BOX))// & wxFRAME_NO_TASKBAR
 {
     wxImage::AddHandler(new wxPNGHandler);
+    wxImage::AddHandler(new wxXPMHandler);
 
     board = new Board(8, 8);
     

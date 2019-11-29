@@ -1,7 +1,7 @@
 .PHONY: run clean
 CC:=g++
 INCLUDE:=./include
-CFLAGS:=-c -I$(INCLUDE) -Wall -std=c++11
+CFLAGS:=-c -I$(INCLUDE) -Wall -std=gnu++11
 SRC_DIR:=src
 OBJ_DIR:=obj
 SRC_FILES:=$(wildcard $(SRC_DIR)/*.cpp)

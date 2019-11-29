@@ -1,8 +1,9 @@
 #include "MiniMaxAI.h"
 #include <wx/wx.h>
+#include <fstream>
 
 #define LOG(x) std::cout << x << std::endl;
-#define DEPTH 8
+#define DEPTH 5
 #define MAX 99999
 #define MIN -99999
 
@@ -32,6 +33,8 @@ void MiniMaxAI::get_move()
     int index = 0;
     Token* temp;
     Token** board;
+
+    auto start = std::chrono::system_clock::now();
     while (count < num_threads)
     {
         temp = ai_tokens->getToken(index);
@@ -83,6 +86,13 @@ void MiniMaxAI::get_move()
         }
         index++;
     }
+
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> diff = end - start;
+    std::ofstream outfile;
+    outfile.open(std::to_string(1) + "_thread_" + std::to_string(DEPTH) + "_depth.txt", std::ios_base::app);
+    outfile << std::fixed << std::setprecision(10) << diff.count() << std::endl;
+    std::cout << diff.count() << std::endl;
     //wait for each thread to join
     //count = 0;
     //while (count < num_threads)
