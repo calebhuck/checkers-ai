@@ -4,7 +4,7 @@
 #include <iomanip>
 
 #define LOG(x) std::cout << x << std::endl;
-#define DEPTH 5
+#define DEPTH 6
 #define MAX 99999
 #define MIN -99999
 
@@ -81,26 +81,28 @@ void MiniMaxAI::get_move()
             //LOG("\n\n")
 
             //create worker to evaluate possible moves of this token with its own copy of board
-            //workers[count] = std::thread(&MiniMaxAI::findMove, this, temp->getID(), DEPTH, AI, board, moves);
-            findMove(temp->getID(), DEPTH, AI, board, moves);
+            workers[count] = std::thread(&MiniMaxAI::findMove, this, temp->getID(), DEPTH, AI, board, moves);
+            //findMove(temp->getID(), DEPTH, AI, board, moves);
             count++;
         }
         index++;
     }
 
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> diff = end - start;
-    std::ofstream outfile;
-    outfile.open(std::to_string(1) + "_thread_" + std::to_string(DEPTH) + "_depth.txt", std::ios_base::app);
-    outfile << std::fixed << std::setprecision(10) << diff.count() << std::endl;
-    std::cout << diff.count() << std::endl;
     //wait for each thread to join
-    //count = 0;
-    //while (count < num_threads)
-    //{
-    //    workers[count].join();
-    //    count++;
-    //}
+    count = 0;
+    while (count < num_threads)
+    {
+        workers[count].join();
+        count++;
+    }
+
+    //time algorithm and print result to file
+    //auto end = std::chrono::system_clock::now();
+    //std::chrono::duration<double> diff = end - start;
+    //std::ofstream outfile;
+    //outfile.open(std::to_string(1) + "_thread_" + std::to_string(DEPTH) + "_depth.txt", std::ios_base::app);
+    //outfile << std::fixed << std::setprecision(10) << diff.count() << std::endl;
+    //std::cout << diff.count() << std::endl;
     
     for (int i = 0; i < 12; i++)
     {

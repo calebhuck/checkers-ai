@@ -41,7 +41,6 @@ class Game
         MiniMaxAI* ai;
         Tokens* ai_tokens;
         Tokens* player_tokens;
-        wxFrame* window;
 };
 
 #endif
