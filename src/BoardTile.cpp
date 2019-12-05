@@ -1,8 +1,4 @@
 #include "BoardTile.h"
-//#include "./img/token_red_king.png"
-//#include "./img/token_red.png"
-//#include "./img/token_white_king.png"
-//#include "./img/token_white.png"
 
 BoardTile::BoardTile(Game* game, wxFrame* parent, wxWindowID id, wxPoint pos, wxSize size) : wxPanel(parent, id, pos, size)
 {

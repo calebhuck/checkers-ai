@@ -14,7 +14,6 @@ $(EXECUTABLE): $(OBJ_FILES)
 	`wx-config --cxx` -o $@ $^ `wx-config --libs`
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	clear
 	$(CC) `wx-config --cxxflags` $(CFLAGS) -o $@ $< 
 
 run: $(EXECUTABLE)

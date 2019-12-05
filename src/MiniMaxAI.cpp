@@ -35,7 +35,7 @@ void MiniMaxAI::get_move()
     Token* temp;
     Token** board;
 
-    auto start = std::chrono::system_clock::now();
+    //auto start = std::chrono::system_clock::now();
     while (count < num_threads)
     {
         temp = ai_tokens->getToken(index);
@@ -63,22 +63,6 @@ void MiniMaxAI::get_move()
                     board[temp2->getRow() * 8 + temp2->getCol()] = new Token(temp2);
                 }
             }
-
-            //for (int i = 0; i < 8; i++)
-            //{
-            //    for (int j = 0; j < 8; j++)
-            //    {
-            //        if (board[i * 8 + j] != nullptr)
-            //        {
-            //            if (board[i * 8 + j]->getPlayer() == PLAYER) std::cout << "p   ";
-            //            else if (board[i * 8 + j]->getPlayer() == AI) std::cout << "a   ";
-            //        }
-            //        else std::cout << "x   ";
-            //    }
-            //    LOG("\n")
-            //}
-//
-            //LOG("\n\n")
 
             //create worker to evaluate possible moves of this token with its own copy of board
             workers[count] = std::thread(&MiniMaxAI::findMove, this, temp->getID(), DEPTH, AI, board, moves);

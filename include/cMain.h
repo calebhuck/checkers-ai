@@ -8,19 +8,15 @@ class Board;
 class Game;
 #include "Game.h"
 
-class cMain: public wxFrame//, private wxTimer
+class cMain: public wxFrame
 {
 public:
     cMain();
     ~cMain();
-    //void updateTiles(wxTimerEvent& evt);
-    //virtual void Notify();
 
 private:
     Board* board;
     Game* game;
-    //wxTimer update_timer;
-    //DECLARE_EVENT_TABLE();
 };
 enum
 {
