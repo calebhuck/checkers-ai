@@ -87,7 +87,7 @@ void MiniMaxAI::get_move()
     //outfile.open(std::to_string(1) + "_thread_" + std::to_string(DEPTH) + "_depth.txt", std::ios_base::app);
     //outfile << std::fixed << std::setprecision(10) << diff.count() << std::endl;
     //std::cout << diff.count() << std::endl;
-    
+
     for (int i = 0; i < 12; i++)
     {
         if (moves[i] != nullptr)
@@ -104,7 +104,7 @@ void MiniMaxAI::get_move()
         {
             if (moves[i]->score > max)
             {
-                best_move = moves[i]; 
+                best_move = moves[i];
                 max = best_move->score;
             }
         }
@@ -112,9 +112,9 @@ void MiniMaxAI::get_move()
 
     std::cout << "BEST: " << max << "\n\n\n";
 
-    
+
     //if a best move exists, make the move
-    if (best_move != nullptr) 
+    if (best_move != nullptr)
     {
         if (game->getTile(best_move->from_row, best_move->from_col) != nullptr && game->getTile(best_move->to_row, best_move->to_col) != nullptr)
         {
@@ -127,7 +127,7 @@ void MiniMaxAI::get_move()
     {
         LOG("ERROR: No viable moves");
     }
-   
+
     for (int i = 0; i < 12; i++)
     {
         if (moves[i] != nullptr)
@@ -151,7 +151,7 @@ Token** MiniMaxAI::getBoardCopy(Token** old_board)
             {
                 new_board[i * 8 + j] = nullptr;
             }
-            
+
         }
     }
     return new_board;
@@ -232,7 +232,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
             temp_board = getBoardCopy(board);
             move(temp_board, row, col, row + 2, col + 2);
             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
-            
+
             if (score >= best_score)
             {
                 if (ai_move == nullptr)
@@ -249,12 +249,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
                 if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
                 {
-                    best_score += 100; 
+                    best_score += 100;
                     ai_move->score += 100;
                 }
                 if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
                 {
-                    best_score += 100; 
+                    best_score += 100;
                     ai_move->score += 100;
                 }
                 for (int i = 0; i < 64; i++)
@@ -271,7 +271,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
             temp_board = getBoardCopy(board);
             move(temp_board, row, col, row + 2, col - 2);
             int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
-            
+
             if (score >= best_score)
             {
                 if (ai_move == nullptr)
@@ -288,12 +288,12 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
                 if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
                 {
-                    best_score += 100; 
+                    best_score += 100;
                     ai_move->score+=100;
                 }
                 if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
                 {
-                    best_score += 100; 
+                    best_score += 100;
                     ai_move->score+=100;
                 }
                 for (int i = 0; i < 64; i++)
@@ -313,7 +313,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 1, col + 1);
                 int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
-                
+
                 if (score >= best_score)
                 {
                     if (ai_move == nullptr)
@@ -334,7 +334,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 1, col - 1);
                 int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
-                
+
                 if (score >= best_score)
                 {
                     if (ai_move == nullptr)
@@ -355,7 +355,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 2, col + 2);
                 int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
-                
+
                 if (score >= best_score)
                 {
                     if (ai_move == nullptr)
@@ -372,22 +372,22 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col + 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col - 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
                     for (int i = 0; i < 64; i++)
@@ -404,7 +404,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                 temp_board = getBoardCopy(board);
                 move(temp_board, row, col, row - 2, col - 2);
                 int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
-                
+
                 if (score >= best_score)
                 {
                     if (ai_move == nullptr)
@@ -421,23 +421,23 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     move(temp_board, ai_move->from_row, ai_move->from_col, ai_move->to_row, ai_move->to_col);
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col + 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row + 2, ai_move->to_col - 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
 
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col + 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
                     if (validateMove(temp_board, ai_move->to_row, ai_move->to_col, ai_move->to_row - 2, ai_move->to_col - 2))
                     {
-                        best_score += 100; 
+                        best_score += 100;
                         ai_move->score+=100;
                     }
                     for (int i = 0; i < 64; i++)
@@ -519,7 +519,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     {
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row + 1, col - 1);
-            
+
                         int score = findMove(id, depth - 1, PLAYER, temp_board, nullptr);
 
                         if (score >= best_score)
@@ -543,11 +543,11 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             move(temp_board, row, col, new_row, new_col);
                             if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
                             {
-                                best_score += 100; 
+                                best_score += 100;
                             }
                             if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col - 2))
                             {
-                                best_score += 100; 
+                                best_score += 100;
                             }
 
                             for (int i = 0; i < 64; i++)
@@ -574,11 +574,11 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             move(temp_board, row, col, row + 2, col - 2);
                             if (validateMove(temp_board, new_row, new_col, new_row + 2, new_col + 2))
                             {
-                                best_score += 100; 
+                                best_score += 100;
                             }
                             if (validateMove(temp_board,new_row, new_col, new_row + 2, new_col - 2))
                             {
-                                best_score += 100; 
+                                best_score += 100;
                             }
 
                             for (int i = 0; i < 64; i++)
@@ -737,8 +737,8 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                     {
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row - 1, col + 1);
-                        int score = findMove(id, depth - 1, AI, temp_board, nullptr);                        
-            
+                        int score = findMove(id, depth - 1, AI, temp_board, nullptr);
+
                         if (score <= best_score)
                         {
                             best_score = score;
@@ -750,7 +750,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row - 1, col - 1);
                         int score = findMove(id, depth - 1, AI, temp_board, nullptr);
-            
+
                         if (score <= best_score)
                         {
                             best_score = score;
@@ -762,7 +762,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         Token** temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row - 2, col + 2);
                         int score = findMove(id, depth - 1, AI, temp_board, nullptr);
-            
+
                         if (score <= best_score)
                         {
                             best_score = score;
@@ -773,11 +773,11 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             move(temp_board, row, col, new_row, new_col);
                             if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col + 2))
                             {
-                                best_score -= 100; 
+                                best_score -= 100;
                             }
                             if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col - 2))
                             {
-                                best_score -= 100; 
+                                best_score -= 100;
                             }
 
                             for (int i = 0; i < 64; i++)
@@ -786,7 +786,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                     delete temp_board[i];
                             }
                             delete[] temp_board;
-            
+
                         }
                     }
 
@@ -795,7 +795,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                         temp_board = getBoardCopy(board);
                         move(temp_board, row, col, row - 2, col - 2);
                         int score = findMove(id, depth - 1, AI, temp_board, nullptr);
-            
+
                         if (score <= best_score)
                         {
                             best_score = score;
@@ -805,11 +805,11 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             move(temp_board, row, col, new_row, new_col);
                             if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col + 2))
                             {
-                                best_score -= 100; 
+                                best_score -= 100;
                             }
                             if (validateMove(temp_board, new_row, new_col, new_row - 2, new_col - 2))
                             {
-                                best_score -= 100; 
+                                best_score -= 100;
                             }
 
                             for (int i = 0; i < 64; i++)
@@ -829,7 +829,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 1, col + 1);
                             int score = findMove(id, depth - 1, AI, temp_board, nullptr);
-            
+
                             if (score <= best_score)
                             {
                                 best_score = score;
@@ -841,7 +841,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 1, col - 1);
                             int score = findMove(id, depth - 1, AI, temp_board, nullptr);
-            
+
                             if (score <= best_score)
                             {
                                 best_score = score;
@@ -853,7 +853,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 2, col + 2);
                             int score = findMove(id, depth - 1, AI, temp_board, nullptr);
-            
+
                             if (score < best_score)
                             {
                                 best_score = score;
@@ -893,7 +893,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                             temp_board = getBoardCopy(board);
                             move(temp_board, row, col, row + 2, col - 2);
                             int score = findMove(id, depth - 1, AI, temp_board, nullptr);
-            
+
                             if (score <= best_score)
                             {
                                 best_score = score;
@@ -925,7 +925,7 @@ int MiniMaxAI::findMove(int id, int depth, PlayerType turn, Token** board, AIMov
                                         delete temp_board[i];
                                 }
                                 delete[] temp_board;
-            
+
                             }
                         }
                     }
@@ -992,12 +992,12 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
     if (from_col < 0 || from_col > 7) return false;
     if (to_row < 0 || to_row > 7) return false;
     if (to_col < 0 || to_col > 7) return false;
-    
+
     Token* token = board[from_row * 8 + from_col];
     if (token == nullptr) return false;
 
     bool is_king = token->isKing();
-    
+
     if (token->getPlayer() == PLAYER)
     {
         //player token moves 1 space forward (can be king or regular)
@@ -1016,7 +1016,7 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
                 temp = board[(to_row + 1) * 8 + (to_col - 1)];
             else
                 temp = board[(to_row + 1) * 8 + (to_col + 1)];
-            
+
             if (temp != nullptr)
             {
                 if (temp->getPlayer() == AI)
@@ -1028,9 +1028,9 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
             {
                 return false;
             }
-            
+
         }
-        
+
         //player token moves two spaces backward, must jump an enemy piece and be a king token
         else if (to_row - from_row == 2 && (abs(to_col - from_col) == 2) && board[to_row * 8 + to_col]  == nullptr && token->isKing())
         {
@@ -1040,7 +1040,7 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
                 temp = board[(to_row - 1) * 8 + (to_col - 1)];
             else
                 temp = board[(to_row - 1) * 8 + (to_col + 1)];
-            
+
             if (temp != nullptr)
             {
                 if (temp->getPlayer() == AI)
@@ -1050,10 +1050,10 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
             {
                 return false;
             }
-            
+
         }
     }
-   
+
     if (token->getPlayer() == AI)
     {
         //ai token moves 1 space forward (can be king or regular)
@@ -1072,7 +1072,7 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
                 temp = board[(to_row - 1) * 8 + (to_col - 1)];
             else
                 temp = board[(to_row - 1) * 8 + (to_col + 1)];
-            
+
             if (temp != nullptr)
             {
                 if (temp->getPlayer() == PLAYER)
@@ -1082,9 +1082,9 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
             {
                 return false;
             }
-            
+
         }
-        
+
         //ai token moves two spaces backward, must jump an enemy piece and be a king token
         if (to_row - from_row == -2 && (abs(to_col - from_col) == 2) && board[to_row * 8 + to_col]  == nullptr && token->isKing())
         {
@@ -1094,7 +1094,7 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
                 temp = board[(to_row + 1) * 8 + (to_col - 1)];
             else
                 temp = board[(to_row + 1) * 8 + (to_col + 1)];
-            
+
             if (temp != nullptr)
             {
                 if (temp->getPlayer() == PLAYER)
@@ -1104,7 +1104,7 @@ bool MiniMaxAI::validateMove(Token** board, int from_row, int from_col, int to_r
             {
                 return false;
             }
-            
+
         }
     }
     return false;
@@ -1128,7 +1128,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
 
         //a jump was made
         if (abs(to_row - from_row) == 2)
-        {  
+        {
             jump_move = true;
             Token* jumped;
 
@@ -1150,7 +1150,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                                 board[(to_row + 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR1: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
@@ -1169,7 +1169,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                                 board[(to_row - 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR2: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
@@ -1192,7 +1192,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                                 board[(to_row - 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR3: Invalid move made,  validateMove function should not allow this...\n";
                             //throw -1;
@@ -1211,7 +1211,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                                 board[(to_row + 1) * 8 + (to_col - 1)] = nullptr;
                             }
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR4: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
@@ -1238,7 +1238,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                                 board[(to_row + 1) * 8 + (to_col + 1)] = nullptr;
                             }
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR5: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
@@ -1257,7 +1257,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                                 board[(to_row - 1) * 8 + (to_col + 1)] = nullptr;
                             }
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR6: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
@@ -1280,7 +1280,7 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                                 board[(to_row - 1) * 8 + (to_col + 1)] = nullptr;
                             }
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR7: Invalid move made,  validateMove function should not allow this...\n";
                             //throw -1;
@@ -1296,16 +1296,16 @@ void MiniMaxAI::move(Token** board, int from_row, int from_col, int to_row, int 
                             board[(to_row + 1) * 8 + (to_col + 1)]->~Token();
                             board[(to_row + 1) * 8 + (to_col + 1)] = nullptr;
                         }
-                        else 
+                        else
                         {
                             std::cout << "ERROR8: Invalid move made, validateMove function should not allow this...\n";
                             //throw -1;
                         }
                     }
-                }  
+                }
             }
         }
-        
+
         //if a token made it to the end, change it to a king and end the turn
         if (to_row == 0 && token->getPlayer() == PLAYER && !token->isKing())
         {

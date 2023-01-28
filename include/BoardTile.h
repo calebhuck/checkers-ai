@@ -4,7 +4,7 @@
 #include "Game.h"
 #include <wx/wx.h>
 
-//fixes mutual inclusion problem 
+//fixes mutual inclusion problem
 class Game;
 
 class BoardTile: public wxPanel
