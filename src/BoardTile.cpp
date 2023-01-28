@@ -1,5 +1,9 @@
 #include "BoardTile.h"
 #include <wx/gdicmn.h>
+#define RED_TOKEN RED_TOKEN_FILE
+#define RED_TOKEN_KING RED_TOKEN_KING_FILE
+#define WHITE_TOKEN WHITE_TOKEN_FILE
+#define WHITE_TOKEN_KING WHITE_TOKEN_KING_FILE
 
 BoardTile::BoardTile(Game *game, wxFrame *parent, wxWindowID id, wxPoint pos,
                      wxSize size)
@@ -46,30 +50,18 @@ void BoardTile::render(wxDC &dc) {
   if (token_present) {
     if (token->getPlayer() == PLAYER) {
       if (!token->isKing()) {
-        dc.DrawIcon(wxIcon("/home/caleb/workspace/checkers-ai/"
-                           "resources/test.png",
-                           wxBITMAP_TYPE_PNG),
-                    wxPoint(0, 0));
+        dc.DrawIcon(wxIcon(RED_TOKEN, wxBITMAP_TYPE_PNG), wxPoint(0, 0));
       } else {
-        dc.DrawIcon(wxIcon("/home/caleb/workspace/checkers-ai/"
-                           "resources/token_red_king.png",
-                           wxBITMAP_TYPE_ANY, 170, 170),
+        dc.DrawIcon(wxIcon(RED_TOKEN_KING, wxBITMAP_TYPE_ANY, 170, 170),
                     wxPoint(0, 0));
       }
     }
 
     else if (token->getPlayer() == AI) {
-      wxIcon icon("/home/caleb/workspace/checkers-ai/"
-                  "resources/token_white.png",
-                  wxBITMAP_TYPE_PNG);
-      icon.SetWidth(17);
-      icon.SetHeight(17);
-      dc.DrawIcon(icon, wxPoint(0, 0));
+      dc.DrawIcon(wxIcon(WHITE_TOKEN, wxBITMAP_TYPE_PNG), wxPoint(0, 0));
       if (!token->isKing()) {
       } else {
-        dc.DrawIcon(wxIcon("/home/caleb/workspace/checkers-ai/"
-                           "resources/token_white_king.png",
-                           wxBITMAP_TYPE_PNG, 50, 50),
+        dc.DrawIcon(wxIcon(WHITE_TOKEN_KING, wxBITMAP_TYPE_PNG, 50, 50),
                     wxPoint(0, 0));
       }
     }
